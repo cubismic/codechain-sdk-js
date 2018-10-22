@@ -452,7 +452,7 @@ export class Core {
         outputs?: AssetTransferOutput[];
         networkId?: NetworkId;
         nonce?: number;
-    }) {
+    }): AssetDecomposeTransaction {
         if (
             params === null ||
             typeof params !== "object" ||
@@ -472,6 +472,12 @@ export class Core {
         checkTransferOutputs(outputs);
         checkNetworkId(networkId);
         checkNonce(nonce);
+        return new AssetDecomposeTransaction({
+            input,
+            outputs,
+            networkId,
+            nonce
+        });
     }
 
     public createAssetTransferInput(params: {
