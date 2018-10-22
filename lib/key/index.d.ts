@@ -1,5 +1,5 @@
 import { AssetTransferAddress, PlatformAddress } from "codechain-primitives";
-import { AssetTransferTransaction, Parcel, SignedParcel, U256 } from "../core/classes";
+import { AssetComposeTransaction, AssetDecomposeTransaction, AssetTransferTransaction, Parcel, SignedParcel, U256 } from "../core/classes";
 import { NetworkId } from "../core/types";
 import { SignatureTag } from "../utils";
 import { KeyStore } from "./KeyStore";
@@ -98,7 +98,7 @@ export declare class Key {
      * @param params.keyStore A key store.
      * @param params.passphrase The passphrase for the given input.
      */
-    signTransactionInput(tx: AssetTransferTransaction, index: number, params?: {
+    signTransactionInput(tx: AssetTransferTransaction | AssetComposeTransaction | AssetDecomposeTransaction, index: number, params?: {
         keyStore?: KeyStore;
         passphrase?: string;
         signatureTag?: SignatureTag;
