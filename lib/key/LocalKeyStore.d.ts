@@ -20,6 +20,7 @@ export declare class LocalKeyStore implements KeyStore {
         }) => Promise<string>;
         getPublicKey: (params: {
             key: string;
+            passphrase?: string | undefined;
         }) => Promise<string | null>;
         sign: (params: {
             key: string;
@@ -41,6 +42,7 @@ export declare class LocalKeyStore implements KeyStore {
         }) => Promise<string>;
         getPublicKey: (params: {
             key: string;
+            passphrase?: string | undefined;
         }) => Promise<string | null>;
         sign: (params: {
             key: string;
@@ -48,6 +50,6 @@ export declare class LocalKeyStore implements KeyStore {
             passphrase?: string | undefined;
         }) => Promise<string>;
     };
-    private constructor();
+    constructor(cckey: CCKey);
     close(): Promise<void>;
 }

@@ -10,6 +10,6 @@ export declare class RemoteKeyStore implements KeyStore {
             key: string;
         }) => Promise<string>;
     };
-    private constructor();
+    constructor(keystoreURL: string);
     ping(): Promise<void>;
 }

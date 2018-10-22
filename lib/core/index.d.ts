@@ -225,7 +225,7 @@ export declare class Core {
         outputs?: AssetTransferOutput[];
         networkId?: NetworkId;
         nonce?: number;
-    }): void;
+    }): AssetDecomposeTransaction;
     createAssetTransferInput(params: {
         assetOutPoint: AssetOutPoint | {
             transactionHash: H256 | string;
