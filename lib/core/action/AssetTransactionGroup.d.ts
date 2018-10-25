@@ -66,7 +66,6 @@ export declare class AssetTransactionGroup {
             data: {
                 networkId: string;
                 shardId: number;
-                worldId: number;
                 metadata: string;
                 output: {
                     lockScriptHash: string;
@@ -81,7 +80,6 @@ export declare class AssetTransactionGroup {
             data: {
                 networkId: string;
                 shardId: number;
-                worldId: number;
                 metadata: string;
                 registrar: import("codechain-primitives/lib/address/PlatformAddress").PlatformAddress | null;
                 output: {
@@ -124,23 +122,6 @@ export declare class AssetTransactionGroup {
                 }[];
                 networkId: string;
                 nonce: number;
-            };
-        } | {
-            type: string;
-            data: {
-                networkId: string;
-                shardId: number;
-                nonce: number;
-                owners: import("codechain-primitives/lib/address/PlatformAddress").PlatformAddress[];
-            };
-        } | {
-            type: string;
-            data: {
-                networkId: string;
-                shardId: number;
-                worldId: number;
-                nonce: number;
-                users: import("codechain-primitives/lib/address/PlatformAddress").PlatformAddress[];
             };
         })[];
         changes: {

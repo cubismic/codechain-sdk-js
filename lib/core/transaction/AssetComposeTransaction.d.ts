@@ -18,7 +18,6 @@ export declare class AssetComposeTransaction {
     static fromJSON(obj: any): AssetComposeTransaction;
     readonly networkId: NetworkId;
     readonly shardId: number;
-    readonly worldId: number;
     readonly metadata: string;
     readonly registrar: PlatformAddress | null;
     readonly inputs: AssetTransferInput[];
@@ -28,7 +27,6 @@ export declare class AssetComposeTransaction {
     /**
      * @param params.networkId A network ID of the transaction.
      * @param params.shardId A shard ID of the transaction.
-     * @param params.worldId A world ID of the transaction.
      * @param params.metadata A metadata of the asset.
      * @param params.registrar A registrar of the asset.
      * @param params.inputs A list of inputs of the transaction.
@@ -38,7 +36,6 @@ export declare class AssetComposeTransaction {
     constructor(params: {
         networkId: NetworkId;
         shardId: number;
-        worldId: number;
         metadata: string;
         registrar: PlatformAddress | null;
         inputs: AssetTransferInput[];
@@ -54,7 +51,6 @@ export declare class AssetComposeTransaction {
         data: {
             networkId: string;
             shardId: number;
-            worldId: number;
             metadata: string;
             registrar: PlatformAddress | null;
             output: {

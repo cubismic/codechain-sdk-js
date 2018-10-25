@@ -127,10 +127,9 @@ export declare class ChainRpc {
      * Gets asset scheme of given hash of AssetMintTransaction.
      * @param txhash The tx hash of AssetMintTransaction.
      * @param shardId The shard id of Asset Scheme.
-     * @param worldId The world id of Asset Scheme.
      * @returns AssetScheme, if asset scheme exists. Else, returns null.
      */
-    getAssetSchemeByHash(txhash: H256 | string, shardId: number, worldId: number): Promise<AssetScheme | null>;
+    getAssetSchemeByHash(txhash: H256 | string, shardId: number): Promise<AssetScheme | null>;
     /**
      * Gets asset scheme of asset type
      * @param assetType The type of Asset.

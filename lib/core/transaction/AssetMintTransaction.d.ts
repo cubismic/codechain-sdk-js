@@ -28,7 +28,6 @@ export declare class AssetMintTransaction {
     static fromJSON(data: any): AssetMintTransaction;
     readonly networkId: NetworkId;
     readonly shardId: number;
-    readonly worldId: number;
     readonly metadata: string;
     readonly output: AssetMintOutput;
     readonly registrar: PlatformAddress | null;
@@ -47,7 +46,6 @@ export declare class AssetMintTransaction {
     constructor(data: {
         networkId: NetworkId;
         shardId: number;
-        worldId: number;
         metadata: string;
         output: AssetMintOutput;
         registrar: PlatformAddress | null;
@@ -62,7 +60,6 @@ export declare class AssetMintTransaction {
         data: {
             networkId: string;
             shardId: number;
-            worldId: number;
             metadata: string;
             output: {
                 lockScriptHash: string;

@@ -8,7 +8,6 @@ export declare class AssetScheme {
     static fromJSON(data: any): AssetScheme;
     readonly networkId?: NetworkId;
     readonly shardId?: number;
-    readonly worldId?: number;
     readonly metadata: string;
     readonly amount: number;
     readonly registrar: PlatformAddress | null;
@@ -19,7 +18,6 @@ export declare class AssetScheme {
     constructor(data: {
         networkId?: NetworkId;
         shardId?: number;
-        worldId?: number;
         metadata: string;
         amount: number;
         registrar: PlatformAddress | null;

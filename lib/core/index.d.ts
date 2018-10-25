@@ -24,9 +24,6 @@ import { AssetOutPoint } from "./transaction/AssetOutPoint";
 import { AssetTransferInput, Timelock } from "./transaction/AssetTransferInput";
 import { AssetTransferOutput } from "./transaction/AssetTransferOutput";
 import { AssetTransferTransaction } from "./transaction/AssetTransferTransaction";
-import { CreateWorldTransaction } from "./transaction/CreateWorldTransaction";
-import { SetWorldOwnersTransaction } from "./transaction/SetWorldOwnersTransaction";
-import { SetWorldUsersTransaction } from "./transaction/SetWorldUsersTransaction";
 import { Transaction } from "./transaction/Transaction";
 import { NetworkId } from "./types";
 import { U256 } from "./U256";
@@ -54,9 +51,6 @@ export declare class Core {
         AssetTransferInput: typeof AssetTransferInput;
         AssetTransferOutput: typeof AssetTransferOutput;
         AssetOutPoint: typeof AssetOutPoint;
-        CreateWorldTransaction: typeof CreateWorldTransaction;
-        SetWorldOwnersTransaction: typeof SetWorldOwnersTransaction;
-        SetWorldUsersTransaction: typeof SetWorldUsersTransaction;
         Asset: typeof Asset;
         AssetScheme: typeof AssetScheme;
         Script: typeof Script;
@@ -86,9 +80,6 @@ export declare class Core {
         AssetTransferInput: typeof AssetTransferInput;
         AssetTransferOutput: typeof AssetTransferOutput;
         AssetOutPoint: typeof AssetOutPoint;
-        CreateWorldTransaction: typeof CreateWorldTransaction;
-        SetWorldOwnersTransaction: typeof SetWorldOwnersTransaction;
-        SetWorldUsersTransaction: typeof SetWorldUsersTransaction;
         Asset: typeof Asset;
         AssetScheme: typeof AssetScheme;
         Script: typeof Script;
@@ -159,7 +150,6 @@ export declare class Core {
      */
     createAssetScheme(params: {
         shardId: number;
-        worldId: number;
         metadata: string;
         amount: number;
         registrar?: PlatformAddress | string;
@@ -168,31 +158,10 @@ export declare class Core {
             amount: number;
         }[];
     }): AssetScheme;
-    createCreateWorldTransaction(params: {
-        networkId?: NetworkId;
-        shardId: number;
-        owners: Array<PlatformAddress | string>;
-        nonce?: number;
-    }): CreateWorldTransaction;
-    createSetWorldOwnersTransaction(params: {
-        networkId?: NetworkId;
-        shardId: number;
-        worldId: number;
-        owners: Array<PlatformAddress | string>;
-        nonce: number;
-    }): SetWorldOwnersTransaction;
-    createSetWorldUsersTransaction(params: {
-        networkId?: NetworkId;
-        shardId: number;
-        worldId: number;
-        users: Array<PlatformAddress | string>;
-        nonce: number;
-    }): SetWorldUsersTransaction;
     createAssetMintTransaction(params: {
         scheme: AssetScheme | {
             networkId?: NetworkId;
             shardId: number;
-            worldId: number;
             metadata: string;
             registrar?: PlatformAddress | string;
             amount: number | null;
@@ -210,7 +179,6 @@ export declare class Core {
     createAssetComposeTransaction(params: {
         scheme: AssetScheme | {
             shardId: number;
-            worldId: number;
             metadata: string;
             amount: number | null;
             registrar?: PlatformAddress | string;
