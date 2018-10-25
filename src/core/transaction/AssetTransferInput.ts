@@ -126,16 +126,16 @@ function convertTimelockToEncodeObject(timelock: Timelock | null) {
     let typeEncoded;
     switch (type) {
         case "block":
-            typeEncoded = 0;
-            break;
-        case "blockAge":
             typeEncoded = 1;
             break;
-        case "time":
+        case "blockAge":
             typeEncoded = 2;
             break;
-        case "timeAge":
+        case "time":
             typeEncoded = 3;
+            break;
+        case "timeAge":
+            typeEncoded = 4;
             break;
         default:
             throw Error(`Unexpected timelock type: ${type}`);
