@@ -13,12 +13,12 @@ import { KeyStore } from "./KeyStore";
  */
 export class P2PKH {
     public static getLockScript(): Buffer {
-        const { COPY, BLAKE160, EQ, JZ, CHKSIG } = Script.Opcode;
-        return Buffer.from([COPY, 0x01, BLAKE160, EQ, JZ, 0xff, CHKSIG]);
+        const { CHKSIG } = Script.Opcode;
+        return Buffer.from([CHKSIG]);
     }
 
     public static getLockScriptHash(): H160 {
-        return new H160("5f5960a7bca6ceeeb0c97bc717562914e7a1de04");
+        return new H160("d4c23a53d70e9db1e7433a3d62e674402f316ba6");
     }
     private rawKeyStore: KeyStore;
     private networkId: NetworkId;
@@ -71,10 +71,7 @@ export class P2PKH {
             ...Buffer.from(signature, "hex"),
             PUSHB,
             encodedTag.byteLength,
-            ...encodedTag,
-            PUSHB,
-            64,
-            ...Buffer.from(publicKey, "hex")
+            ...encodedTag
         ]);
     }
 }

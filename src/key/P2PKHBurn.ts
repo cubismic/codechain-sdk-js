@@ -10,23 +10,12 @@ import { KeyStore } from "./KeyStore";
 
 export class P2PKHBurn {
     public static getLockScript(): Buffer {
-        const { COPY, BLAKE160, EQ, JZ, CHKSIG, BURN } = Script.Opcode;
-        return Buffer.from([
-            COPY,
-            0x01,
-            BLAKE160,
-            EQ,
-            JZ,
-            0xff,
-            CHKSIG,
-            JZ,
-            0xff,
-            BURN
-        ]);
+        const { JZ, CHKSIG, BURN } = Script.Opcode;
+        return Buffer.from([CHKSIG, JZ, 0xff, BURN]);
     }
 
     public static getLockScriptHash(): H160 {
-        return new H160("37572bdcc22d39a59c0d12d301f6271ba3fdd451");
+        return new H160("8cf03a38366586bfe66d8ada3c3b355de3273b86");
     }
     private keyStore: KeyStore;
     private networkId: NetworkId;
@@ -78,10 +67,7 @@ export class P2PKHBurn {
             ...Buffer.from(signature, "hex"),
             PUSHB,
             encodedTag.byteLength,
-            ...encodedTag,
-            PUSHB,
-            64,
-            ...Buffer.from(publicKey, "hex")
+            ...encodedTag
         ]);
     }
 }
