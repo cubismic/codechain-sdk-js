@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { AssetTransferAddress, H160 } from "codechain-primitives/lib";
-import { U256 } from "../U256";
+import { U64 } from "../U64";
 export interface AssetMintOutputJSON {
     lockScriptHash: string;
     parameters: number[][];
@@ -15,7 +15,7 @@ export declare class AssetMintOutput {
     static fromJSON(data: AssetMintOutputJSON): AssetMintOutput;
     readonly lockScriptHash: H160;
     readonly parameters: Buffer[];
-    readonly amount?: U256 | null;
+    readonly amount?: U64 | null;
     /**
      * @param data.lockScriptHash A lock script hash of the output.
      * @param data.parameters Parameters of the output.
@@ -24,10 +24,10 @@ export declare class AssetMintOutput {
     constructor(data: {
         lockScriptHash: H160;
         parameters: Buffer[];
-        amount?: U256 | null;
+        amount?: U64 | null;
     } | {
         recipient: AssetTransferAddress;
-        amount?: U256 | null;
+        amount?: U64 | null;
     });
     /**
      * Convert to an AssetMintOutput JSON object.

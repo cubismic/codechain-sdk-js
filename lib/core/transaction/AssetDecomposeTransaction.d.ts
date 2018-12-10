@@ -25,7 +25,7 @@ export declare class AssetDecomposeTransaction {
     readonly input: AssetTransferInput;
     readonly outputs: AssetTransferOutput[];
     readonly networkId: NetworkId;
-    readonly type: string;
+    readonly type = "assetDecompose";
     /**
      * @param params.inputs An array of AssetTransferInput to decompose.
      * @param params.outputs An array of AssetTransferOutput to create.

@@ -51,7 +51,7 @@ export declare class Block {
             blockNumber: number | null;
             blockHash: string | null;
             parcelIndex: number | null;
-            seq: string;
+            seq: number;
             fee: string;
             networkId: string;
             action: {

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { H160 } from "../H160";
 import { H256 } from "../H256";
-import { U256 } from "../U256";
+import { U64 } from "../U64";
 export interface AssetOutPointJSON {
     transactionHash: string;
     index: number;
@@ -12,7 +12,7 @@ export interface AssetOutPointData {
     transactionHash: H256;
     index: number;
     assetType: H256;
-    amount: U256;
+    amount: U64;
     lockScriptHash?: H160;
     parameters?: Buffer[];
 }
@@ -33,7 +33,7 @@ export declare class AssetOutPoint {
     readonly transactionHash: H256;
     readonly index: number;
     readonly assetType: H256;
-    readonly amount: U256;
+    readonly amount: U64;
     readonly lockScriptHash?: H160;
     readonly parameters?: Buffer[];
     /**

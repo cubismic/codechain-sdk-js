@@ -1,4 +1,4 @@
-import { H256, PlatformAddress, U256 } from "codechain-primitives";
+import { H256, PlatformAddress } from "codechain-primitives";
 import { Parcel } from "../core/Parcel";
 import { Rpc } from ".";
 export declare class AccountRpc {
@@ -47,7 +47,7 @@ export declare class AccountRpc {
         passphrase?: string;
     }): Promise<{
         hash: H256;
-        seq: U256;
+        seq: number;
     }>;
     /**
      * Unlocks the account.

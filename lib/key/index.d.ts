@@ -1,5 +1,5 @@
 import { AssetTransferAddress, PlatformAddress } from "codechain-primitives";
-import { AssetComposeTransaction, AssetDecomposeTransaction, AssetTransferTransaction, Parcel, SignedParcel, U256 } from "../core/classes";
+import { AssetComposeTransaction, AssetDecomposeTransaction, AssetTransferTransaction, AssetUnwrapCCCTransaction, Order, Parcel, SignedParcel, Transaction, U64 } from "../core/classes";
 import { NetworkId } from "../core/types";
 import { SignatureTag } from "../utils";
 import { KeyStore } from "./KeyStore";
@@ -75,6 +75,20 @@ export declare class Key {
         keyStore: KeyStore;
     }): P2PKHBurn;
     /**
+     * Approves the transaction
+     * @param transaction A transaction
+     * @param params
+     * @param params.keyStore A key store.
+     * @param params.account An account.
+     * @param params.passphrase The passphrase for the given account
+     * @returns An approval
+     */
+    approveTransaction(transaction: Transaction, params: {
+        keyStore?: KeyStore;
+        account: PlatformAddress | string;
+        passphrase?: string;
+    }): Promise<string>;
+    /**
      * Signs a Parcel with the given account.
      * @param parcel A Parcel
      * @param params.keyStore A key store.
@@ -88,8 +102,8 @@ export declare class Key {
         keyStore?: KeyStore;
         account: PlatformAddress | string;
         passphrase?: string;
-        fee: U256 | string | number;
-        seq: U256 | string | number;
+        fee: U64 | string | number;
+        seq: number;
     }): Promise<SignedParcel>;
     /**
      * Signs a transaction's input with a given key store.
@@ -104,13 +118,25 @@ export declare class Key {
         signatureTag?: SignatureTag;
     }): Promise<void>;
     /**
+     * Signs a transaction's input with an order.
+     * @param tx An AssetTransferTransaction.
+     * @param index The index of an input to sign.
+     * @param order An order to be used as a signature message.
+     * @param params.keyStore A key store.
+     * @param params.passphrase The passphrase for the given input.
+     */
+    signTransactionInputWithOrder(tx: AssetTransferTransaction, index: number, order: Order, params?: {
+        keyStore?: KeyStore;
+        passphrase?: string;
+    }): Promise<void>;
+    /**
      * Signs a transaction's burn with a given key store.
      * @param tx An AssetTransferTransaction.
      * @param index The index of a burn to sign.
      * @param params.keyStore A key store.
      * @param params.passphrase The passphrase for the given burn.
      */
-    signTransactionBurn(tx: AssetTransferTransaction, index: number, params?: {
+    signTransactionBurn(tx: AssetTransferTransaction | AssetUnwrapCCCTransaction, index: number, params?: {
         keyStore?: KeyStore;
         passphrase?: string;
         signatureTag?: SignatureTag;

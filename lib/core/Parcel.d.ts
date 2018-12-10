@@ -1,11 +1,12 @@
 /// <reference types="node" />
 import { PlatformAddress } from "codechain-primitives";
 import { Action } from "./action/Action";
+import { Asset } from "./Asset";
 import { H256 } from "./H256";
 import { SignedParcel } from "./SignedParcel";
 import { Transaction } from "./transaction/Transaction";
 import { NetworkId } from "./types";
-import { U256 } from "./U256";
+import { U64 } from "./U64";
 /**
  * A unit that collects transaction and requests processing to the network. A parsel signer pays for CCC processing fees.
  *
@@ -19,26 +20,27 @@ export declare class Parcel {
     /**
      * @deprecated
      */
-    static transaction(networkId: NetworkId, transaction: Transaction): Parcel;
+    static transaction(networkId: NetworkId, transaction: Transaction, approvals?: string[]): Parcel;
     /**
      * @deprecated
      */
-    static payment(networkId: NetworkId, receiver: PlatformAddress, value: U256): Parcel;
+    static payment(networkId: NetworkId, receiver: PlatformAddress, value: U64): Parcel;
     static fromJSON(result: any): Parcel;
-    seq: U256 | null;
-    fee: U256 | null;
+    seq?: number | null;
+    fee: U64 | null;
     readonly networkId: NetworkId;
     readonly action: Action;
     constructor(networkId: NetworkId, action: Action);
-    setSeq(seq: U256 | string | number): void;
-    setFee(fee: U256 | string | number): void;
+    setSeq(seq: number): void;
+    setFee(fee: U64 | string | number): void;
     toEncodeObject(): any[];
     rlpBytes(): Buffer;
     hash(): H256;
+    getAsset(): Asset;
     sign(params: {
         secret: H256 | string;
-        seq: U256 | string | number;
-        fee: U256 | string | number;
+        seq: number;
+        fee: U64 | string | number;
     }): SignedParcel;
     toJSON(): any;
 }

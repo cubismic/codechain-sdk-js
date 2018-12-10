@@ -10,7 +10,7 @@ import { Parcel } from "../core/Parcel";
 import { SignedParcel } from "../core/SignedParcel";
 import { Transaction } from "../core/transaction/Transaction";
 import { NetworkId } from "../core/types";
-import { U256 } from "../core/U256";
+import { U64 } from "../core/U64";
 export declare class ChainRpc {
     private rpc;
     private parcelSigner?;
@@ -45,8 +45,8 @@ export declare class ChainRpc {
     sendParcel(parcel: Parcel, options?: {
         account?: PlatformAddress | string;
         passphrase?: string;
-        seq?: U256 | string | number;
-        fee?: U256 | string | number;
+        seq?: number | null;
+        fee?: U64 | string | number;
     }): Promise<H256>;
     /**
      * Gets SignedParcel of given hash. Else returns null.
@@ -98,14 +98,14 @@ export declare class ChainRpc {
      * @param blockNumber The specific block number to get account's balance at given address.
      * @returns Balance of account at the specified block, or null if no such block exists.
      */
-    getBalance(address: PlatformAddress | string, blockNumber?: number): Promise<U256>;
+    getBalance(address: PlatformAddress | string, blockNumber?: number): Promise<U64>;
     /**
      * Gets seq of an account of given address, recorded in the block of given blockNumber. If blockNumber is not given, then returns seq recorded in the most recent block.
      * @param address An account address
      * @param blockNumber The specific block number to get account's seq at given address.
      * @returns Seq of account at the specified block, or null if no such block exists.
      */
-    getSeq(address: PlatformAddress | string, blockNumber?: number): Promise<U256>;
+    getSeq(address: PlatformAddress | string, blockNumber?: number): Promise<number>;
     /**
      * Gets number of the latest block.
      * @returns Number of the latest block.

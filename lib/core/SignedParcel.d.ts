@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { PlatformAddress } from "codechain-primitives";
+import { Asset } from "./Asset";
 import { H160 } from "./H160";
 import { H256 } from "./H256";
 import { H512 } from "./H512";
@@ -76,6 +77,7 @@ export declare class SignedParcel {
      * @returns A parcel hash.
      */
     hash(): H256;
+    getAsset(): Asset;
     /**
      * Get the account ID of a parcel's signer.
      * @returns An account ID.
@@ -103,7 +105,7 @@ export declare class SignedParcel {
         blockNumber: number | null;
         blockHash: string | null;
         parcelIndex: number | null;
-        seq: string;
+        seq: number;
         fee: string;
         networkId: string;
         action: {

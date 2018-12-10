@@ -14,7 +14,8 @@ export interface AssetComposeTransactionJSON {
         metadata: string;
         inputs: AssetTransferInputJSON[];
         output: AssetMintOutputJSON;
-        registrar: string | null;
+        approver: string | null;
+        administrator: string | null;
     };
 }
 /**
@@ -30,15 +31,17 @@ export declare class AssetComposeTransaction {
     readonly networkId: NetworkId;
     readonly shardId: number;
     readonly metadata: string;
-    readonly registrar: PlatformAddress | null;
+    readonly approver: PlatformAddress | null;
+    readonly administrator: PlatformAddress | null;
     readonly inputs: AssetTransferInput[];
     readonly output: AssetMintOutput;
-    readonly type: string;
+    readonly type = "assetCompose";
     /**
      * @param params.networkId A network ID of the transaction.
      * @param params.shardId A shard ID of the transaction.
      * @param params.metadata A metadata of the asset.
-     * @param params.registrar A registrar of the asset.
+     * @param params.approver A approver of the asset.
+     * @param params.administrator A administrator of the asset.
      * @param params.inputs A list of inputs of the transaction.
      * @param params.output An output of the transaction.
      */
@@ -46,7 +49,8 @@ export declare class AssetComposeTransaction {
         networkId: NetworkId;
         shardId: number;
         metadata: string;
-        registrar: PlatformAddress | null;
+        approver: PlatformAddress | null;
+        administrator: PlatformAddress | null;
         inputs: AssetTransferInput[];
         output: AssetMintOutput;
     });

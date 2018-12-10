@@ -3,14 +3,18 @@ import { SignatureTag } from "../../utils";
 import { Asset } from "../Asset";
 import { H256 } from "../H256";
 import { AssetTransferOutputValue, NetworkId } from "../types";
+import { U64 } from "../U64";
 import { AssetTransferInput, AssetTransferInputJSON } from "./AssetTransferInput";
 import { AssetTransferOutput, AssetTransferOutputJSON } from "./AssetTransferOutput";
+import { Order } from "./Order";
+import { OrderOnTransfer, OrderOnTransferJSON } from "./OrderOnTransfer";
 export interface AssetTransferTransactionJSON {
     type: "assetTransfer";
     data: {
         burns: AssetTransferInputJSON[];
         inputs: AssetTransferInputJSON[];
         outputs: AssetTransferOutputJSON[];
+        orders: OrderOnTransferJSON[];
         networkId: NetworkId;
     };
 }
@@ -18,6 +22,7 @@ export interface AssetTransferTransactionData {
     burns: AssetTransferInput[];
     inputs: AssetTransferInput[];
     outputs: AssetTransferOutput[];
+    orders: OrderOnTransfer[];
     networkId: NetworkId;
 }
 /**
@@ -43,8 +48,9 @@ export declare class AssetTransferTransaction {
     readonly burns: AssetTransferInput[];
     readonly inputs: AssetTransferInput[];
     readonly outputs: AssetTransferOutput[];
+    readonly orders: OrderOnTransfer[];
     readonly networkId: NetworkId;
-    readonly type: string;
+    readonly type = "assetTransfer";
     /**
      * @param params.burns An array of AssetTransferInput to burn.
      * @param params.inputs An array of AssetTransferInput to spend.
@@ -55,7 +61,7 @@ export declare class AssetTransferTransaction {
     /**
      * Convert to an object for RLP encoding.
      */
-    toEncodeObject(): (string | number | ((string | number)[] | Buffer | number[][])[][] | (string | number | Buffer[])[][])[];
+    toEncodeObject(): (string | number | ((string | number)[] | Buffer | number[][])[][] | (string | number | Buffer[])[][] | (string | number | (string | number | Buffer[] | (string | number)[][])[])[][])[];
     /**
      * Convert to RLP bytes.
      */
@@ -86,6 +92,19 @@ export declare class AssetTransferTransaction {
      * @param output.recipient A recipient of the output.
      */
     addOutputs(outputs: AssetTransferOutputValue | Array<AssetTransferOutputValue>, ...rest: Array<AssetTransferOutputValue>): AssetTransferTransaction;
+    /**
+     * Add an Order to create.
+     * @param params.order An order to apply to the transfer transaction.
+     * @param params.spentAmount A spent amount of the asset to give(from) while transferring.
+     * @param params.inputIndices The indices of inputs affected by the order
+     * @param params.outputIndices The indices of outputs affected by the order
+     */
+    addOrder(params: {
+        order: Order;
+        spentAmount: U64 | string | number;
+        inputIndices: number[];
+        outputIndices: number[];
+    }): this;
     /**
      * Get the output of the given index, of this transaction.
      * @param index An index indicating an output.

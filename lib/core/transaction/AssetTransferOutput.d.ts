@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { AssetTransferAddress, H160 } from "codechain-primitives";
 import { H256 } from "../H256";
-import { U256 } from "../U256";
+import { U64 } from "../U64";
 export interface AssetTransferOutputJSON {
     lockScriptHash: string;
     parameters: number[][];
@@ -12,12 +12,12 @@ export interface AssetTransferOutputData {
     lockScriptHash: H160;
     parameters: Buffer[];
     assetType: H256;
-    amount: U256;
+    amount: U64;
 }
 export interface AssetTransferOutputAddressData {
     recipient: AssetTransferAddress;
     assetType: H256;
-    amount: U256;
+    amount: U64;
 }
 /**
  * An AssetTransferOutput consists of:
@@ -34,7 +34,7 @@ export declare class AssetTransferOutput {
     readonly lockScriptHash: H160;
     readonly parameters: Buffer[];
     readonly assetType: H256;
-    readonly amount: U256;
+    readonly amount: U64;
     /**
      * @param data.lockScriptHash A lock script hash of the output.
      * @param data.parameters Parameters of the output.

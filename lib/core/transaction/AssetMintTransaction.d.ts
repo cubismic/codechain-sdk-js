@@ -12,7 +12,8 @@ export interface AssetMintTransactionJSON {
         shardId: number;
         metadata: string;
         output: AssetMintOutputJSON;
-        registrar: string | null;
+        approver: string | null;
+        administrator: string | null;
     };
 }
 /**
@@ -22,8 +23,9 @@ export interface AssetMintTransactionJSON {
  *  - A metadata is a string that explains the asset's type.
  *  - Amount defines the quantity of asset to be created. If set as null, it
  *  will be set as the maximum value of a 64-bit unsigned integer by default.
- *  - If registrar exists, the registrar must be the Signer of the Parcel when
+ *  - If approver exists, the approver must be the Signer of the Parcel when
  *  sending the created asset through AssetTransferTransaction.
+ *  - If administrator exists, the administrator can transfer without unlocking.
  */
 export declare class AssetMintTransaction {
     /**
@@ -36,8 +38,9 @@ export declare class AssetMintTransaction {
     readonly shardId: number;
     readonly metadata: string;
     readonly output: AssetMintOutput;
-    readonly registrar: PlatformAddress | null;
-    readonly type: string;
+    readonly approver: PlatformAddress | null;
+    readonly administrator: PlatformAddress | null;
+    readonly type = "assetMint";
     /**
      * @param data.networkId A network ID of the transaction.
      * @param data.shardId A shard ID of the transaction.
@@ -45,14 +48,16 @@ export declare class AssetMintTransaction {
      * @param data.output.lockScriptHash A lock script hash of the output.
      * @param data.output.parameters Parameters of the output.
      * @param data.output.amount Asset amount of the output.
-     * @param data.registrar A registrar of the asset.
+     * @param data.approver A approver of the asset.
+     * @param data.administrator A administrator of the asset.
      */
     constructor(data: {
         networkId: NetworkId;
         shardId: number;
         metadata: string;
         output: AssetMintOutput;
-        registrar: PlatformAddress | null;
+        approver: PlatformAddress | null;
+        administrator: PlatformAddress | null;
     });
     /**
      * Convert to an AssetMintTransaction JSON object.

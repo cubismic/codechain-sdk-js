@@ -1,9 +1,9 @@
 import { PlatformAddress } from "codechain-primitives";
-import { U256 } from "../U256";
+import { U64 } from "../U64";
 export declare class Payment {
     receiver: PlatformAddress;
-    amount: U256;
-    constructor(receiver: PlatformAddress, amount: U256);
+    amount: U64;
+    constructor(receiver: PlatformAddress, amount: U64);
     toEncodeObject(): any[];
     toJSON(): {
         action: string;
