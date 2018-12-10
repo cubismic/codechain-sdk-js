@@ -16,6 +16,7 @@ import {
     signEcdsa
 } from "../lib/utils";
 import { U256 } from "../src/core/U256";
+import { U64 } from "../src/core/U64";
 
 import {
     ACCOUNT_ADDRESS,
@@ -176,13 +177,13 @@ describe("rpc", () => {
 
             test("getBalance", async () => {
                 expect(await sdk.rpc.chain.getBalance(address)).toEqual(
-                    expect.any(U256)
+                    expect.any(U64)
                 );
             });
 
             test("getSeq", async () => {
-                expect(await sdk.rpc.chain.getSeq(address)).toEqual(
-                    expect.any(U256)
+                expect(typeof (await sdk.rpc.chain.getSeq(address))).toBe(
+                    "number"
                 );
             });
 
@@ -227,7 +228,7 @@ describe("rpc", () => {
 
         describe("sendSignedParcel", () => {
             const secret = signerSecret;
-            let seq: U256;
+            let seq: number;
             let parcel: Parcel;
             beforeEach(async () => {
                 parcel = sdk.core.createPaymentParcel({
@@ -275,9 +276,7 @@ describe("rpc", () => {
             test("NotEnoughBalance", async done => {
                 const signedParcel = parcel.sign({
                     secret,
-                    fee: new U256(
-                        "0xffffffffffffffffffffffffffffffffffffffffffffffffff"
-                    ),
+                    fee: new U64("0xffffffffffffffff"),
                     seq
                 });
                 sdk.rpc.chain
@@ -308,7 +307,7 @@ describe("rpc", () => {
                 const signedParcel = parcel.sign({
                     secret,
                     fee: 12321,
-                    seq: new U256(seq.value.minus(1))
+                    seq: seq - 1
                 });
                 sdk.rpc.chain
                     .sendSignedParcel(signedParcel)
@@ -381,7 +380,7 @@ describe("rpc", () => {
                         shardId,
                         metadata: "metadata",
                         amount: 10,
-                        registrar: undefined
+                        approver: undefined
                     })
                     .createMintTransaction({
                         recipient: await sdk.key.createAssetTransferAddress()
@@ -475,7 +474,7 @@ describe("rpc", () => {
                         shardId,
                         metadata: "metadata",
                         amount: 10,
-                        registrar: undefined
+                        approver: undefined
                     })
                     .createMintTransaction({
                         recipient: await sdk.key.createAssetTransferAddress()
@@ -507,7 +506,7 @@ describe("rpc", () => {
                 await sdk.rpc.chain.sendSignedParcel(
                     transferParcel.sign({
                         secret: signerSecret,
-                        seq: U256.plus(seq, 1),
+                        seq: seq + 1,
                         fee: 10
                     })
                 );

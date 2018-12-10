@@ -3,6 +3,7 @@ export { H160 } from "./H160";
 export { H256 } from "./H256";
 export { H512 } from "./H512";
 export { U256 } from "./U256";
+export { U64 } from "./U64";
 export { Invoice } from "./Invoice";
 export { Block } from "./Block";
 export { Parcel } from "./Parcel";
@@ -15,6 +16,7 @@ export { AssetTransaction } from "./action/AssetTransaction";
 export { CreateShard } from "./action/CreateShard";
 export { SetShardOwners } from "./action/SetShardOwners";
 export { SetShardUsers } from "./action/SetShardUsers";
+export { WrapCCC } from "./action/WrapCCC";
 
 export { Transaction } from "./transaction/Transaction";
 export { AssetMintTransaction } from "./transaction/AssetMintTransaction";
@@ -28,6 +30,11 @@ export { AssetComposeTransaction } from "./transaction/AssetComposeTransaction";
 export {
     AssetDecomposeTransaction
 } from "./transaction/AssetDecomposeTransaction";
+export {
+    AssetUnwrapCCCTransaction
+} from "./transaction/AssetUnwrapCCCTransaction";
+export { Order } from "./transaction/Order";
+export { OrderOnTransfer } from "./transaction/OrderOnTransfer";
 export { Asset } from "./Asset";
 export { AssetScheme } from "./AssetScheme";
 

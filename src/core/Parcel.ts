@@ -4,11 +4,13 @@ import { blake256, signEcdsa } from "../utils";
 import { Action, getActionFromJSON } from "./action/Action";
 import { AssetTransaction } from "./action/AssetTransaction";
 import { Payment } from "./action/Payment";
+import { WrapCCC } from "./action/WrapCCC";
+import { Asset } from "./Asset";
 import { H256 } from "./H256";
 import { SignedParcel } from "./SignedParcel";
 import { Transaction } from "./transaction/Transaction";
 import { NetworkId } from "./types";
-import { U256 } from "./U256";
+import { U64 } from "./U64";
 
 const RLP = require("rlp");
 
@@ -27,9 +29,10 @@ export class Parcel {
      */
     public static transaction(
         networkId: NetworkId,
-        transaction: Transaction
+        transaction: Transaction,
+        approvals: string[] = []
     ): Parcel {
-        const action = new AssetTransaction({ transaction });
+        const action = new AssetTransaction({ transaction, approvals });
         return new Parcel(networkId, action);
     }
 
@@ -39,7 +42,7 @@ export class Parcel {
     public static payment(
         networkId: NetworkId,
         receiver: PlatformAddress,
-        value: U256
+        value: U64
     ): Parcel {
         const action = new Payment(receiver, value);
         return new Parcel(networkId, action);
@@ -52,8 +55,8 @@ export class Parcel {
         parcel.setFee(fee);
         return parcel;
     }
-    public seq: U256 | null;
-    public fee: U256 | null;
+    public seq?: number | null;
+    public fee: U64 | null;
     public readonly networkId: NetworkId;
     public readonly action: Action;
 
@@ -64,25 +67,20 @@ export class Parcel {
         this.action = action;
     }
 
-    public setSeq(seq: U256 | string | number) {
-        this.seq = U256.ensure(seq);
+    public setSeq(seq: number) {
+        this.seq = seq;
     }
 
-    public setFee(fee: U256 | string | number) {
-        this.fee = U256.ensure(fee);
+    public setFee(fee: U64 | string | number) {
+        this.fee = U64.ensure(fee);
     }
 
     public toEncodeObject(): any[] {
         const { seq, fee, action, networkId } = this;
-        if (!seq || !fee) {
+        if (seq == null || !fee) {
             throw Error("Seq and fee in the parcel must be present");
         }
-        return [
-            seq.toEncodeObject(),
-            fee.toEncodeObject(),
-            networkId,
-            action.toEncodeObject()
-        ];
+        return [seq, fee.toEncodeObject(), networkId, action.toEncodeObject()];
     }
 
     public rlpBytes(): Buffer {
@@ -93,20 +91,28 @@ export class Parcel {
         return new H256(blake256(this.rlpBytes()));
     }
 
+    public getAsset(): Asset {
+        const { action } = this;
+        if (!(action instanceof WrapCCC)) {
+            throw Error("Getting asset is only available with WrapCCC action");
+        }
+        return action.getAsset(this.hash());
+    }
+
     public sign(params: {
         secret: H256 | string;
-        seq: U256 | string | number;
-        fee: U256 | string | number;
+        seq: number;
+        fee: U64 | string | number;
     }): SignedParcel {
         const { secret, seq, fee } = params;
         if (this.seq !== null) {
             throw Error("The parcel seq is already set");
         }
-        this.seq = U256.ensure(seq);
+        this.seq = seq;
         if (this.fee !== null) {
             throw Error("The parcel fee is already set");
         }
-        this.fee = U256.ensure(fee);
+        this.fee = U64.ensure(fee);
         const { r, s, v } = signEcdsa(
             this.hash().value,
             H256.ensure(secret).value
@@ -125,8 +131,8 @@ export class Parcel {
             networkId,
             action: action.toJSON()
         };
-        if (seq) {
-            result.seq = seq.toEncodeObject();
+        if (seq != null) {
+            result.seq = seq;
         }
         return result;
     }

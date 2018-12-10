@@ -8,9 +8,12 @@ import {
     AssetComposeTransaction,
     AssetDecomposeTransaction,
     AssetTransferTransaction,
+    AssetUnwrapCCCTransaction,
+    Order,
     Parcel,
     SignedParcel,
-    U256
+    Transaction,
+    U64
 } from "../core/classes";
 import { NetworkId } from "../core/types";
 import { SignatureTag } from "../utils";
@@ -155,6 +158,45 @@ export class Key {
     }
 
     /**
+     * Approves the transaction
+     * @param transaction A transaction
+     * @param params
+     * @param params.keyStore A key store.
+     * @param params.account An account.
+     * @param params.passphrase The passphrase for the given account
+     * @returns An approval
+     */
+    public async approveTransaction(
+        transaction: Transaction,
+        params: {
+            keyStore?: KeyStore;
+            account: PlatformAddress | string;
+            passphrase?: string;
+        }
+    ): Promise<string> {
+        const {
+            account,
+            passphrase,
+            keyStore = await this.ensureKeyStore()
+        } = params;
+        if (!isKeyStore(keyStore)) {
+            throw Error(
+                `Expected keyStore param to be a KeyStore instance but found ${keyStore}`
+            );
+        }
+        if (!PlatformAddress.check(account)) {
+            throw Error(
+                `Expected account param to be a PlatformAddress value but found ${account}`
+            );
+        }
+        const accountId = PlatformAddress.ensure(account).getAccountId();
+        return await keyStore.platform.sign({
+            key: accountId.value,
+            message: transaction.hash().value,
+            passphrase
+        });
+    }
+    /**
      * Signs a Parcel with the given account.
      * @param parcel A Parcel
      * @param params.keyStore A key store.
@@ -170,8 +212,8 @@ export class Key {
             keyStore?: KeyStore;
             account: PlatformAddress | string;
             passphrase?: string;
-            fee: U256 | string | number;
-            seq: U256 | string | number;
+            fee: U64 | string | number;
+            seq: number;
         }
     ): Promise<SignedParcel> {
         if (!(parcel instanceof Parcel)) {
@@ -196,14 +238,14 @@ export class Key {
                 `Expected account param to be a PlatformAddress value but found ${account}`
             );
         }
-        if (!U256.check(fee)) {
+        if (!U64.check(fee)) {
             throw Error(
-                `Expected fee param to be a U256 value but found ${fee}`
+                `Expected fee param to be a U64 value but found ${fee}`
             );
         }
-        if (!U256.check(seq)) {
+        if (typeof seq !== "number") {
             throw Error(
-                `Expected seq param to be a U256 value but found ${seq}`
+                `Expected seq param to be a number value but found ${seq}`
             );
         }
         parcel.setFee(fee);
@@ -264,11 +306,21 @@ export class Key {
         const p2pkh = this.createP2PKH({ keyStore });
         let message: H256;
         if (tx instanceof AssetTransferTransaction) {
-            message = tx.hashWithoutScript({
-                tag: signatureTag,
-                type: "input",
-                index
-            });
+            let flag = false;
+            for (const order of tx.orders) {
+                if (order.inputIndices.indexOf(index) !== -1) {
+                    message = order.order.hash();
+                    flag = true;
+                    break;
+                }
+            }
+            if (!flag) {
+                message = tx.hashWithoutScript({
+                    tag: signatureTag,
+                    type: "input",
+                    index
+                });
+            }
         } else if (tx instanceof AssetComposeTransaction) {
             // FIXME: check type
             message = tx.hashWithoutScript({
@@ -282,9 +334,54 @@ export class Key {
             throw Error(`Invalid tx`);
         }
         input.setUnlockScript(
-            await p2pkh.createUnlockScript(publicKeyHash, message, {
+            await p2pkh.createUnlockScript(publicKeyHash, message!, {
                 passphrase,
                 signatureTag
+            })
+        );
+    }
+
+    /**
+     * Signs a transaction's input with an order.
+     * @param tx An AssetTransferTransaction.
+     * @param index The index of an input to sign.
+     * @param order An order to be used as a signature message.
+     * @param params.keyStore A key store.
+     * @param params.passphrase The passphrase for the given input.
+     */
+    public async signTransactionInputWithOrder(
+        tx: AssetTransferTransaction,
+        index: number,
+        order: Order,
+        params: {
+            keyStore?: KeyStore;
+            passphrase?: string;
+        } = {}
+    ): Promise<void> {
+        if (index >= tx.inputs.length) {
+            throw Error(`Invalid index`);
+        }
+        const input = tx.inputs[index];
+
+        const { lockScriptHash, parameters } = input.prevOut;
+        if (lockScriptHash === undefined || parameters === undefined) {
+            throw Error(`Invalid transaction input`);
+        }
+        if (lockScriptHash.value !== P2PKH.getLockScriptHash().value) {
+            throw Error(`Unexpected lock script hash`);
+        }
+        if (parameters.length !== 1) {
+            throw Error(`Unexpected length of parameters`);
+        }
+        const publicKeyHash = Buffer.from(parameters[0]).toString("hex");
+
+        input.setLockScript(P2PKH.getLockScript());
+        const { keyStore = await this.ensureKeyStore(), passphrase } = params;
+        const p2pkh = this.createP2PKH({ keyStore });
+        input.setUnlockScript(
+            await p2pkh.createUnlockScript(publicKeyHash, order.hash(), {
+                passphrase,
+                signatureTag: { input: "all", output: "all" }
             })
         );
     }
@@ -297,7 +394,7 @@ export class Key {
      * @param params.passphrase The passphrase for the given burn.
      */
     public async signTransactionBurn(
-        tx: AssetTransferTransaction,
+        tx: AssetTransferTransaction | AssetUnwrapCCCTransaction,
         index: number,
         params: {
             keyStore?: KeyStore;
@@ -305,10 +402,14 @@ export class Key {
             signatureTag?: SignatureTag;
         } = {}
     ): Promise<void> {
-        if (index >= tx.burns.length) {
+        if ("burns" in tx && index >= tx.burns.length) {
             throw Error(`Invalid index`);
         }
-        const { lockScriptHash, parameters } = tx.burns[index].prevOut;
+        if ("burn" in tx && index >= 1) {
+            throw Error(`Invalid index`);
+        }
+        const burn = "burns" in tx ? tx.burns[index] : tx.burn;
+        const { lockScriptHash, parameters } = burn.prevOut;
         if (lockScriptHash === undefined || parameters === undefined) {
             throw Error(`Invalid transaction burn`);
         }
@@ -320,14 +421,14 @@ export class Key {
         }
         const publicKeyHash = Buffer.from(parameters[0]).toString("hex");
 
-        tx.burns[index].setLockScript(P2PKHBurn.getLockScript());
+        burn.setLockScript(P2PKHBurn.getLockScript());
         const {
             keyStore = await this.ensureKeyStore(),
             passphrase,
             signatureTag = { input: "all", output: "all" } as SignatureTag
         } = params;
         const p2pkhBurn = this.createP2PKHBurn({ keyStore });
-        tx.burns[index].setUnlockScript(
+        burn.setUnlockScript(
             await p2pkhBurn.createUnlockScript(
                 publicKeyHash,
                 tx.hashWithoutScript({

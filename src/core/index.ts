@@ -6,6 +6,7 @@ import { Payment } from "./action/Payment";
 import { SetRegularKey } from "./action/SetReulgarKey";
 import { SetShardOwners } from "./action/SetShardOwners";
 import { SetShardUsers } from "./action/SetShardUsers";
+import { WrapCCC } from "./action/WrapCCC";
 import { Asset } from "./Asset";
 import { AssetScheme } from "./AssetScheme";
 import { Block } from "./Block";
@@ -25,9 +26,13 @@ import { AssetOutPoint } from "./transaction/AssetOutPoint";
 import { AssetTransferInput, Timelock } from "./transaction/AssetTransferInput";
 import { AssetTransferOutput } from "./transaction/AssetTransferOutput";
 import { AssetTransferTransaction } from "./transaction/AssetTransferTransaction";
+import { AssetUnwrapCCCTransaction } from "./transaction/AssetUnwrapCCCTransaction";
+import { Order } from "./transaction/Order";
+import { OrderOnTransfer } from "./transaction/OrderOnTransfer";
 import { getTransactionFromJSON, Transaction } from "./transaction/Transaction";
 import { NetworkId } from "./types";
 import { U256 } from "./U256";
+import { U64 } from "./U64";
 
 export class Core {
     public static classes = {
@@ -37,6 +42,7 @@ export class Core {
         H256,
         H512,
         U256,
+        U64,
         Invoice,
         // Block
         Block,
@@ -50,11 +56,13 @@ export class Core {
         CreateShard,
         SetShardOwners,
         SetShardUsers,
+        WrapCCC,
         // Transaction
         AssetMintTransaction,
         AssetTransferTransaction,
         AssetComposeTransaction,
         AssetDecomposeTransaction,
+        AssetUnwrapCCCTransaction,
         AssetTransferInput,
         AssetTransferOutput,
         AssetOutPoint,
@@ -85,18 +93,18 @@ export class Core {
      * @param params.recipient The platform account who receives CCC
      * @param params.amount Amount of CCC to pay
      * @throws Given string for recipient is invalid for converting it to PlatformAddress
-     * @throws Given number or string for amount is invalid for converting it to U256
+     * @throws Given number or string for amount is invalid for converting it to U64
      */
     public createPaymentParcel(params: {
         recipient: PlatformAddress | string;
-        amount: U256 | number | string;
+        amount: U64 | number | string;
     }): Parcel {
         const { recipient, amount } = params;
         checkPlatformAddressRecipient(recipient);
         checkAmount(amount);
         return new Parcel(
             this.networkId,
-            new Payment(PlatformAddress.ensure(recipient), U256.ensure(amount))
+            new Payment(PlatformAddress.ensure(recipient), U64.ensure(amount))
         );
     }
 
@@ -118,12 +126,13 @@ export class Core {
      */
     public createAssetTransactionParcel(params: {
         transaction: Transaction;
+        approvals?: string[];
     }): Parcel {
-        const { transaction } = params;
+        const { transaction, approvals = [] } = params;
         checkTransaction(transaction);
         return new Parcel(
             this.networkId,
-            new AssetTransaction({ transaction })
+            new AssetTransaction({ transaction, approvals })
         );
     }
 
@@ -172,44 +181,230 @@ export class Core {
     }
 
     /**
+     * Creates Wrap CCC action which wraps the value amount of CCC(CodeChain Coin)
+     * in a wrapped CCC asset. Who is signing the parcel will pay.
+     * @param params.shardId A shard ID of the wrapped CCC asset.
+     * @param params.lockScriptHash A lock script hash of the wrapped CCC asset.
+     * @param params.parameters Parameters of the wrapped CCC asset.
+     * @param params.amount Amount of CCC to pay
+     * @throws Given string for a lock script hash is invalid for converting it to H160
+     * @throws Given number or string for amount is invalid for converting it to U64
+     */
+    public createWrapCCCParcel(
+        params:
+            | {
+                  shardId: number;
+                  lockScriptHash: H160 | string;
+                  parameters: Buffer[];
+                  amount: U64 | number | string;
+              }
+            | {
+                  shardId: number;
+                  recipient: AssetTransferAddress | string;
+                  amount: U64 | number | string;
+              }
+    ): Parcel {
+        const { shardId, amount } = params;
+        checkShardId(shardId);
+        checkAmount(amount);
+        if ("recipient" in params) {
+            checkAssetTransferAddressRecipient(params.recipient);
+            return new Parcel(
+                this.networkId,
+                new WrapCCC({
+                    shardId,
+                    recipient: AssetTransferAddress.ensure(params.recipient),
+                    amount: U64.ensure(amount)
+                })
+            );
+        } else {
+            const { lockScriptHash, parameters } = params;
+            checkLockScriptHash(lockScriptHash);
+            checkParameters(parameters);
+            return new Parcel(
+                this.networkId,
+                new WrapCCC({
+                    shardId,
+                    lockScriptHash: H160.ensure(lockScriptHash),
+                    parameters,
+                    amount: U64.ensure(amount)
+                })
+            );
+        }
+    }
+
+    /**
      * Creates asset's scheme.
      * @param params.metadata Any string that describing the asset. For example,
      * stringified JSON containing properties.
      * @param params.amount Total amount of this asset
-     * @param params.registrar Platform account or null. If account is present, the
+     * @param params.approver Platform account or null. If account is present, the
      * parcel that includes AssetTransferTransaction of this asset must be signed by
-     * the registrar account.
-     * @throws Given string for registrar is invalid for converting it to paltform account
+     * the approver account.
+     * @param params.administrator Platform account or null. The administrator
+     * can transfer the asset without unlocking.
+     * @throws Given string for approver is invalid for converting it to paltform account
+     * @throws Given string for administrator is invalid for converting it to paltform account
      */
     public createAssetScheme(params: {
         shardId: number;
         metadata: string;
-        amount: U256 | number | string;
-        registrar?: PlatformAddress | string;
+        amount: U64 | number | string;
+        approver?: PlatformAddress | string;
+        administrator?: PlatformAddress | string;
         pool?: { assetType: H256 | string; amount: number }[];
     }): AssetScheme {
         const {
             shardId,
             metadata,
             amount,
-            registrar = null,
+            approver = null,
+            administrator = null,
             pool = []
         } = params;
         checkShardId(shardId);
         checkMetadata(metadata);
         checkAmount(amount);
-        checkRegistrar(registrar);
+        checkApprover(approver);
+        checkAdministrator(administrator);
         return new AssetScheme({
             networkId: this.networkId,
             shardId,
             metadata,
-            amount: U256.ensure(amount),
-            registrar:
-                registrar === null ? null : PlatformAddress.ensure(registrar),
+            amount: U64.ensure(amount),
+            approver:
+                approver == null ? null : PlatformAddress.ensure(approver),
+            administrator:
+                administrator == null
+                    ? null
+                    : PlatformAddress.ensure(administrator),
             pool: pool.map(({ assetType, amount: assetAmount }) => ({
                 assetType: H256.ensure(assetType),
-                amount: U256.ensure(assetAmount)
+                amount: U64.ensure(assetAmount)
             }))
+        });
+    }
+
+    public createOrder(
+        params: {
+            assetTypeFrom: H256 | string;
+            assetTypeTo: H256 | string;
+            assetTypeFee?: H256 | string;
+            assetAmountFrom: U64 | number | string;
+            assetAmountTo: U64 | number | string;
+            assetAmountFee?: U64 | number | string;
+            originOutputs:
+                | AssetOutPoint[]
+                | {
+                      transactionHash: H256 | string;
+                      index: number;
+                      assetType: H256 | string;
+                      amount: U64 | number | string;
+                      lockScriptHash?: H256 | string;
+                      parameters?: Buffer[];
+                  }[];
+            expiration: U64 | number | string;
+        } & (
+            | {
+                  lockScriptHash: H160 | string;
+                  parameters: Buffer[];
+              }
+            | {
+                  recipient: AssetTransferAddress | string;
+              })
+    ): Order {
+        const {
+            assetTypeFrom,
+            assetTypeTo,
+            assetTypeFee = "0000000000000000000000000000000000000000000000000000000000000000",
+            assetAmountFrom,
+            assetAmountTo,
+            assetAmountFee = 0,
+            originOutputs,
+            expiration
+        } = params;
+        checkAssetType(assetTypeFrom);
+        checkAssetType(assetTypeTo);
+        checkAssetType(assetTypeFee);
+        checkAmount(assetAmountFrom);
+        checkAmount(assetAmountTo);
+        checkAmount(assetAmountFee);
+        checkExpiration(expiration);
+        const originOutputsConv: AssetOutPoint[] = [];
+        for (let i = 0; i < originOutputs.length; i++) {
+            const originOutput = originOutputs[i];
+            const {
+                transactionHash,
+                index,
+                assetType,
+                amount,
+                lockScriptHash,
+                parameters
+            } = originOutput;
+            checkAssetOutPoint(originOutput);
+            originOutputsConv[i] =
+                originOutput instanceof AssetOutPoint
+                    ? originOutput
+                    : new AssetOutPoint({
+                          transactionHash: H256.ensure(transactionHash),
+                          index,
+                          assetType: H256.ensure(assetType),
+                          amount: U64.ensure(amount),
+                          lockScriptHash: lockScriptHash
+                              ? H160.ensure(lockScriptHash)
+                              : undefined,
+                          parameters
+                      });
+        }
+
+        if ("recipient" in params) {
+            checkAssetTransferAddressRecipient(params.recipient);
+            return new Order({
+                assetTypeFrom: H256.ensure(assetTypeFrom),
+                assetTypeTo: H256.ensure(assetTypeTo),
+                assetTypeFee: H256.ensure(assetTypeFee),
+                assetAmountFrom: U64.ensure(assetAmountFrom),
+                assetAmountTo: U64.ensure(assetAmountTo),
+                assetAmountFee: U64.ensure(assetAmountFee),
+                expiration: U64.ensure(expiration),
+                originOutputs: originOutputsConv,
+                recipient: AssetTransferAddress.ensure(params.recipient)
+            });
+        } else {
+            const { lockScriptHash, parameters } = params;
+            checkLockScriptHash(lockScriptHash);
+            checkParameters(parameters);
+            return new Order({
+                assetTypeFrom: H256.ensure(assetTypeFrom),
+                assetTypeTo: H256.ensure(assetTypeTo),
+                assetTypeFee: H256.ensure(assetTypeFee),
+                assetAmountFrom: U64.ensure(assetAmountFrom),
+                assetAmountTo: U64.ensure(assetAmountTo),
+                assetAmountFee: U64.ensure(assetAmountFee),
+                expiration: U64.ensure(expiration),
+                originOutputs: originOutputsConv,
+                lockScriptHash: H160.ensure(lockScriptHash),
+                parameters
+            });
+        }
+    }
+    public createOrderOnTransfer(params: {
+        order: Order;
+        spentAmount: U64 | string | number;
+        inputIndices: number[];
+        outputIndices: number[];
+    }) {
+        const { order, spentAmount, inputIndices, outputIndices } = params;
+        checkOrder(order);
+        checkAmount(spentAmount);
+        checkIndices(inputIndices);
+        checkIndices(outputIndices);
+
+        return new OrderOnTransfer({
+            order,
+            spentAmount: U64.ensure(spentAmount),
+            inputIndices,
+            outputIndices
         });
     }
 
@@ -220,8 +415,9 @@ export class Core {
                   networkId?: NetworkId;
                   shardId: number;
                   metadata: string;
-                  registrar?: PlatformAddress | string;
-                  amount?: U256 | number | string | null;
+                  approver?: PlatformAddress | string;
+                  administrator?: PlatformAddress | string;
+                  amount?: U64 | number | string | null;
               };
         recipient: AssetTransferAddress | string;
     }): AssetMintTransaction {
@@ -235,7 +431,8 @@ export class Core {
             networkId = this.networkId,
             shardId,
             metadata,
-            registrar = null,
+            approver: approver = null,
+            administrator: administrator = null,
             amount
         } = scheme;
         checkAssetTransferAddressRecipient(recipient);
@@ -245,18 +442,23 @@ export class Core {
         }
         checkShardId(shardId);
         checkMetadata(metadata);
-        checkRegistrar(registrar);
+        checkApprover(approver);
+        checkAdministrator(administrator);
         if (amount != null) {
             checkAmount(amount);
         }
         return new AssetMintTransaction({
             networkId,
             shardId,
-            registrar:
-                registrar == null ? null : PlatformAddress.ensure(registrar),
+            approver:
+                approver == null ? null : PlatformAddress.ensure(approver),
+            administrator:
+                administrator == null
+                    ? null
+                    : PlatformAddress.ensure(administrator),
             metadata,
             output: new AssetMintOutput({
-                amount: amount == null ? null : U256.ensure(amount),
+                amount: amount == null ? null : U64.ensure(amount),
                 recipient: AssetTransferAddress.ensure(recipient)
             })
         });
@@ -266,12 +468,14 @@ export class Core {
         burns?: AssetTransferInput[];
         inputs?: AssetTransferInput[];
         outputs?: AssetTransferOutput[];
+        orders?: OrderOnTransfer[];
         networkId?: NetworkId;
     }): AssetTransferTransaction {
         const {
             burns = [],
             inputs = [],
             outputs = [],
+            orders = [],
             networkId = this.networkId
         } = params || {};
         checkTransferBurns(burns);
@@ -282,6 +486,7 @@ export class Core {
             burns,
             inputs,
             outputs,
+            orders,
             networkId
         });
     }
@@ -292,8 +497,9 @@ export class Core {
             | {
                   shardId: number;
                   metadata: string;
-                  amount?: U256 | number | string | null;
-                  registrar?: PlatformAddress | string;
+                  amount?: U64 | number | string | null;
+                  approver?: PlatformAddress | string;
+                  administrator?: PlatformAddress | string;
                   networkId?: NetworkId;
               };
         inputs: AssetTransferInput[];
@@ -304,7 +510,8 @@ export class Core {
             networkId = this.networkId,
             shardId,
             metadata,
-            registrar = null,
+            approver = null,
+            administrator = null,
             amount
         } = scheme;
         checkTransferInputs(inputs);
@@ -315,20 +522,24 @@ export class Core {
         }
         checkShardId(shardId);
         checkMetadata(metadata);
-        checkRegistrar(registrar);
+        checkApprover(approver);
         if (amount != null) {
             checkAmount(amount);
         }
         return new AssetComposeTransaction({
             networkId,
             shardId,
-            registrar:
-                registrar === null ? null : PlatformAddress.ensure(registrar),
+            approver:
+                approver === null ? null : PlatformAddress.ensure(approver),
+            administrator:
+                administrator === null
+                    ? null
+                    : PlatformAddress.ensure(administrator),
             metadata,
             inputs,
             output: new AssetMintOutput({
                 recipient: AssetTransferAddress.ensure(recipient),
-                amount: amount == null ? null : U256.ensure(amount)
+                amount: amount == null ? null : U64.ensure(amount)
             })
         });
     }
@@ -358,6 +569,28 @@ export class Core {
         });
     }
 
+    public createAssetUnwrapCCCTransaction(params: {
+        burn: AssetTransferInput | Asset;
+        networkId?: NetworkId;
+    }): AssetUnwrapCCCTransaction {
+        const { burn, networkId = this.networkId } = params;
+        checkNetworkId(networkId);
+        if (burn instanceof Asset) {
+            const burnInput = burn.createTransferInput();
+            checkTransferBurns([burnInput]);
+            return new AssetUnwrapCCCTransaction({
+                burn: burnInput,
+                networkId
+            });
+        } else {
+            checkTransferBurns([burn]);
+            return new AssetUnwrapCCCTransaction({
+                burn,
+                networkId
+            });
+        }
+    }
+
     public createAssetTransferInput(params: {
         assetOutPoint:
             | AssetOutPoint
@@ -365,7 +598,7 @@ export class Core {
                   transactionHash: H256 | string;
                   index: number;
                   assetType: H256 | string;
-                  amount: U256 | number | string;
+                  amount: U64 | number | string;
                   lockScriptHash?: H256 | string;
                   parameters?: Buffer[];
               };
@@ -379,10 +612,13 @@ export class Core {
             lockScript,
             unlockScript
         } = params;
-        if (assetOutPoint !== null && typeof assetOutPoint !== "object") {
-            throw Error(
-                `Expected assetOutPoint param to be either an AssetOutPoint or an object but found ${assetOutPoint}`
-            );
+        checkAssetOutPoint(assetOutPoint);
+        checkTimelock(timelock);
+        if (lockScript) {
+            checkLockScript(lockScript);
+        }
+        if (unlockScript) {
+            checkUnlockScript(unlockScript);
         }
         const {
             transactionHash,
@@ -392,23 +628,6 @@ export class Core {
             lockScriptHash,
             parameters
         } = assetOutPoint;
-        checkTransactionHash(transactionHash);
-        checkIndex(index);
-        checkAssetType(assetType);
-        checkAmount(amount);
-        checkTimelock(timelock);
-        if (lockScriptHash) {
-            checkLockScriptHash(lockScriptHash);
-        }
-        if (parameters) {
-            checkParameters(parameters);
-        }
-        if (lockScript) {
-            checkLockScript(lockScript);
-        }
-        if (unlockScript) {
-            checkUnlockScript(unlockScript);
-        }
         return new AssetTransferInput({
             prevOut:
                 assetOutPoint instanceof AssetOutPoint
@@ -417,7 +636,7 @@ export class Core {
                           transactionHash: H256.ensure(transactionHash),
                           index,
                           assetType: H256.ensure(assetType),
-                          amount: U256.ensure(amount),
+                          amount: U64.ensure(amount),
                           lockScriptHash: lockScriptHash
                               ? H160.ensure(lockScriptHash)
                               : undefined,
@@ -433,7 +652,7 @@ export class Core {
         transactionHash: H256 | string;
         index: number;
         assetType: H256 | string;
-        amount: U256 | number | string;
+        amount: U64 | number | string;
     }): AssetOutPoint {
         const { transactionHash, index, assetType, amount } = params;
         checkTransactionHash(transactionHash);
@@ -444,14 +663,14 @@ export class Core {
             transactionHash: H256.ensure(transactionHash),
             index,
             assetType: H256.ensure(assetType),
-            amount: U256.ensure(amount)
+            amount: U64.ensure(amount)
         });
     }
 
     public createAssetTransferOutput(
         params: {
             assetType: H256 | string;
-            amount: U256 | number | string;
+            amount: U64 | number | string;
         } & (
             | {
                   recipient: AssetTransferAddress | string;
@@ -462,7 +681,7 @@ export class Core {
               })
     ): AssetTransferOutput {
         const { assetType } = params;
-        const amount = U256.ensure(params.amount);
+        const amount = U64.ensure(params.amount);
         checkAssetType(assetType);
         checkAmount(amount);
         if ("recipient" in params) {
@@ -520,10 +739,18 @@ function checkAssetTransferAddressRecipient(
     }
 }
 
-function checkAmount(amount: U256 | number | string) {
-    if (!U256.check(amount)) {
+function checkAmount(amount: U64 | number | string) {
+    if (!U64.check(amount)) {
         throw Error(
-            `Expected amount param to be a U256 value but found ${amount}`
+            `Expected amount param to be a U64 value but found ${amount}`
+        );
+    }
+}
+
+function checkExpiration(expiration: U64 | number | string) {
+    if (!U64.check(expiration)) {
+        throw Error(
+            `Expected expiration param to be a U64 value but found ${expiration}`
         );
     }
 }
@@ -555,10 +782,18 @@ function checkMetadata(metadata: string) {
     }
 }
 
-function checkRegistrar(registrar: PlatformAddress | string | null) {
-    if (registrar !== null && !PlatformAddress.check(registrar)) {
+function checkApprover(approver: PlatformAddress | string | null) {
+    if (approver !== null && !PlatformAddress.check(approver)) {
         throw Error(
-            `Expected registrar param to be either null or a PlatformAddress value but found ${registrar}`
+            `Expected approver param to be either null or a PlatformAddress value but found ${approver}`
+        );
+    }
+}
+
+function checkAdministrator(administrator: PlatformAddress | string | null) {
+    if (administrator !== null && !PlatformAddress.check(administrator)) {
+        throw Error(
+            `Expected administrator param to be either null or a PlatformAddress value but found ${administrator}`
         );
     }
 }
@@ -662,6 +897,66 @@ function checkAssetType(value: H256 | string) {
             `Expected assetType param to be an H256 value but found ${value}`
         );
     }
+}
+
+function checkAssetOutPoint(
+    value:
+        | AssetOutPoint
+        | {
+              transactionHash: H256 | string;
+              index: number;
+              assetType: H256 | string;
+              amount: U64 | number | string;
+              lockScriptHash?: H256 | string;
+              parameters?: Buffer[];
+          }
+) {
+    if (value !== null && typeof value !== "object") {
+        throw Error(
+            `Expected assetOutPoint param to be either an AssetOutPoint or an object but found ${value}`
+        );
+    }
+    const {
+        transactionHash,
+        index,
+        assetType,
+        amount,
+        lockScriptHash,
+        parameters
+    } = value;
+    checkTransactionHash(transactionHash);
+    checkIndex(index);
+    checkAssetType(assetType);
+    checkAmount(amount);
+    if (lockScriptHash) {
+        checkLockScriptHash(lockScriptHash);
+    }
+    if (parameters) {
+        checkParameters(parameters);
+    }
+}
+
+function checkOrder(order: Order | null) {
+    if (order !== null && !(order instanceof Order)) {
+        throw Error(
+            `Expected order param to be either null or an Order value but found ${order}`
+        );
+    }
+}
+
+function checkIndices(indices: Array<number>) {
+    if (!Array.isArray(indices)) {
+        throw Error(
+            `Expected indices param to be an array but found ${indices}`
+        );
+    }
+    indices.forEach((value, idx) => {
+        if (typeof value !== "number") {
+            throw Error(
+                `Expected an indices to be an array of numbers but found ${value} at index ${idx}`
+            );
+        }
+    });
 }
 
 function checkLockScriptHash(value: H160 | string) {

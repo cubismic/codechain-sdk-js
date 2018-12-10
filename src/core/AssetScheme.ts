@@ -7,12 +7,13 @@ import {
 import { AssetMintOutput } from "./transaction/AssetMintOutput";
 import { AssetMintTransaction } from "./transaction/AssetMintTransaction";
 import { NetworkId } from "./types";
-import { U256 } from "./U256";
+import { U64 } from "./U64";
 
 export interface AssetSchemeJSON {
     metadata: string;
     amount: string;
-    registrar: string | null;
+    approver: string | null;
+    administrator: string | null;
     pool: {
         assetType: string;
         amount: string;
@@ -24,15 +25,19 @@ export interface AssetSchemeJSON {
  */
 export class AssetScheme {
     public static fromJSON(data: AssetSchemeJSON) {
-        const { metadata, amount, registrar, pool } = data;
+        const { metadata, amount, approver, administrator, pool } = data;
         return new AssetScheme({
             metadata,
-            amount: U256.ensure(amount),
-            registrar:
-                registrar === null ? null : PlatformAddress.ensure(registrar),
+            amount: U64.ensure(amount),
+            approver:
+                approver === null ? null : PlatformAddress.ensure(approver),
+            administrator:
+                administrator === null
+                    ? null
+                    : PlatformAddress.ensure(administrator),
             pool: pool.map(({ assetType, amount: assetAmount }: any) => ({
                 assetType: H256.ensure(assetType),
-                amount: U256.ensure(assetAmount)
+                amount: U64.ensure(assetAmount)
             }))
         });
     }
@@ -40,32 +45,37 @@ export class AssetScheme {
     public readonly networkId?: NetworkId;
     public readonly shardId?: number;
     public readonly metadata: string;
-    public readonly amount: U256;
-    public readonly registrar: PlatformAddress | null;
-    public readonly pool: { assetType: H256; amount: U256 }[];
+    public readonly amount: U64;
+    public readonly approver: PlatformAddress | null;
+    public readonly administrator: PlatformAddress | null;
+    public readonly pool: { assetType: H256; amount: U64 }[];
 
     constructor(data: {
         networkId?: NetworkId;
         shardId?: number;
         metadata: string;
-        amount: U256;
-        registrar: PlatformAddress | null;
-        pool: { assetType: H256; amount: U256 }[];
+        amount: U64;
+        approver: PlatformAddress | null;
+        administrator: PlatformAddress | null;
+        pool: { assetType: H256; amount: U64 }[];
     }) {
         this.networkId = data.networkId;
         this.shardId = data.shardId;
         this.metadata = data.metadata;
-        this.registrar = data.registrar;
+        this.approver = data.approver;
+        this.administrator = data.administrator;
         this.amount = data.amount;
         this.pool = data.pool;
     }
 
     public toJSON(): AssetSchemeJSON {
-        const { metadata, amount, registrar, pool } = this;
+        const { metadata, amount, approver, administrator, pool } = this;
         return {
             metadata,
             amount: `0x${amount.toString(16)}`,
-            registrar: registrar === null ? null : registrar.toString(),
+            approver: approver === null ? null : approver.toString(),
+            administrator:
+                administrator === null ? null : administrator.toString(),
             pool: pool.map(a => ({
                 assetType: a.assetType.value,
                 amount: `0x${a.amount.toString(16)}`
@@ -77,7 +87,14 @@ export class AssetScheme {
         recipient: AssetTransferAddress | string;
     }): AssetMintTransaction {
         const { recipient } = params;
-        const { networkId, shardId, metadata, amount, registrar } = this;
+        const {
+            networkId,
+            shardId,
+            metadata,
+            amount,
+            approver,
+            administrator
+        } = this;
         if (networkId === undefined) {
             throw Error(`networkId is undefined`);
         }
@@ -92,7 +109,8 @@ export class AssetScheme {
                 amount,
                 recipient: AssetTransferAddress.ensure(recipient)
             }),
-            registrar
+            approver,
+            administrator
         });
     }
 }

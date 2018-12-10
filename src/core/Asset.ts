@@ -7,13 +7,14 @@ import { AssetTransferInput, Timelock } from "./transaction/AssetTransferInput";
 import { AssetTransferOutput } from "./transaction/AssetTransferOutput";
 import { AssetTransferTransaction } from "./transaction/AssetTransferTransaction";
 import { NetworkId } from "./types";
-import { U256 } from "./U256";
+import { U64 } from "./U64";
 
 export interface AssetJSON {
     assetType: string;
     lockScriptHash: string;
     parameters: number[][];
     amount: string;
+    orderHash: string | null;
     // The `hash` and the `index` are not included in an RPC response. See
     // getAsset() in chain.ts for more details.
     transactionHash: string;
@@ -24,7 +25,8 @@ export interface AssetData {
     assetType: H256;
     lockScriptHash: H160;
     parameters: Buffer[];
-    amount: U256;
+    amount: U64;
+    orderHash?: H256 | null;
     transactionHash: H256;
     transactionOutputIndex: number;
 }
@@ -38,6 +40,7 @@ export class Asset {
             lockScriptHash,
             parameters,
             amount,
+            orderHash,
             transactionHash,
             transactionOutputIndex
         } = data;
@@ -47,7 +50,8 @@ export class Asset {
             parameters: parameters.map((p: Buffer | number[]) =>
                 Buffer.from(p)
             ),
-            amount: U256.ensure(amount),
+            amount: U64.ensure(amount),
+            orderHash: orderHash === null ? orderHash : H256.ensure(orderHash),
             transactionHash: new H256(transactionHash),
             transactionOutputIndex
         });
@@ -56,8 +60,9 @@ export class Asset {
     public readonly assetType: H256;
     public readonly lockScriptHash: H160;
     public readonly parameters: Buffer[];
-    public readonly amount: U256;
+    public readonly amount: U64;
     public readonly outPoint: AssetOutPoint;
+    public readonly orderHash: H256 | null;
 
     constructor(data: AssetData) {
         const {
@@ -65,6 +70,7 @@ export class Asset {
             transactionOutputIndex,
             assetType,
             amount,
+            orderHash = null,
             lockScriptHash,
             parameters
         } = data;
@@ -72,6 +78,7 @@ export class Asset {
         this.lockScriptHash = data.lockScriptHash;
         this.parameters = data.parameters;
         this.amount = data.amount;
+        this.orderHash = orderHash;
         this.outPoint = new AssetOutPoint({
             transactionHash,
             index: transactionOutputIndex,
@@ -87,6 +94,7 @@ export class Asset {
             assetType,
             lockScriptHash,
             parameters,
+            orderHash,
             amount,
             outPoint
         } = this;
@@ -96,6 +104,7 @@ export class Asset {
             lockScriptHash: lockScriptHash.value,
             parameters: parameters.map(p => [...p]),
             amount: `0x${amount.toString(16)}`,
+            orderHash: orderHash === null ? null : orderHash.toString(),
             transactionHash: transactionHash.value,
             transactionOutputIndex: index
         };
@@ -114,7 +123,7 @@ export class Asset {
     public createTransferTransaction(params: {
         recipients?: Array<{
             address: AssetTransferAddress | string;
-            amount: U256;
+            amount: U64;
         }>;
         timelock?: null | Timelock;
         networkId: NetworkId;
@@ -142,6 +151,7 @@ export class Asset {
                         amount: recipient.amount
                     })
             ),
+            orders: [],
             networkId
         });
     }

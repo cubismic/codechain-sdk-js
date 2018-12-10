@@ -46,13 +46,13 @@ export const mintAsset = async ({
     metadata,
     amount,
     lockScriptHash,
-    registrar
+    approver
 }: any) => {
     const assetScheme = sdk.core.createAssetScheme({
         shardId: 0,
         metadata,
         amount,
-        registrar
+        approver
     });
     const assetAddress = sdk.core.classes.AssetTransferAddress.fromTypeAndPayload(
         0,
@@ -72,7 +72,7 @@ export const payment = async (params?: { inc_seq?: number }) => {
     const { inc_seq = 0 } = params || {};
     let seq = await sdk.rpc.chain.getSeq(ACCOUNT_ADDRESS);
     for (let i = 0; i < inc_seq; i++) {
-        seq = seq.increase();
+        seq += 1;
     }
     const p = sdk.core
         .createPaymentParcel({

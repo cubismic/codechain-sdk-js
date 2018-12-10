@@ -3,6 +3,7 @@ import * as _ from "lodash";
 
 import { blake160, blake256, recoverEcdsa } from "../utils";
 
+import { Asset } from "./Asset";
 import { H160 } from "./H160";
 import { H256 } from "./H256";
 import { H512 } from "./H512";
@@ -137,11 +138,11 @@ export class SignedParcel {
             64,
             "0"
         )}${_.padStart(v.toString(16), 2, "0")}`;
-        if (!seq || !fee) {
+        if (seq == null || !fee) {
             throw Error("Seq and fee in the parcel must be present");
         }
         return [
-            seq.toEncodeObject(),
+            seq,
             fee.toEncodeObject(),
             networkId,
             action.toEncodeObject(),
@@ -162,6 +163,10 @@ export class SignedParcel {
      */
     public hash(): H256 {
         return new H256(blake256(this.rlpBytes()));
+    }
+
+    public getAsset(): Asset {
+        return this.unsigned.getAsset();
     }
 
     /**
@@ -229,7 +234,7 @@ export class SignedParcel {
             blockNumber,
             blockHash: blockHash === null ? null : blockHash.value,
             parcelIndex,
-            seq: seq.value.toString(),
+            seq,
             fee: fee.value.toString(),
             networkId,
             action: action.toJSON(),

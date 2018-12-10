@@ -18,12 +18,12 @@ test("AssetMintTransaction fromJSON", async () => {
     const metadata = "";
     const lockScriptHash = new H160("0000000000000000000000000000000000000000");
     const amount = 100;
-    const registrar = null;
+    const approver = null;
     const { parcelHash } = await mintAsset({
         metadata,
         lockScriptHash,
         amount,
-        registrar
+        approver
     });
     const parcel = await sdk.rpc.chain.getParcel(parcelHash);
     if (parcel == null) {
@@ -41,11 +41,11 @@ test("AssetMintTransaction fromJSON", async () => {
             lockScriptHash: expect.any(H160),
             // FIXME: Buffer[]
             parameters: expect.anything(),
-            // FIXME: Change it to U256
+            // FIXME: Change it to U64
             amount: expect.anything()
         },
         // FIXME: null or H160
-        registrar: null
+        approver: null
     });
 });
 
@@ -57,7 +57,7 @@ test("AssetTransferTransaction fromJSON", async () => {
             shardId: 0,
             metadata: "metadata of non-permissioned asset",
             amount: 100,
-            registrar: undefined
+            approver: undefined
         })
         .createMintTransaction({ recipient: addressA });
     await sendTransaction({ transaction: mintTx });

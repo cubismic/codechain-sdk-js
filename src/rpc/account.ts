@@ -1,4 +1,4 @@
-import { H256, PlatformAddress, U256 } from "codechain-primitives";
+import { H256, PlatformAddress } from "codechain-primitives";
 
 import { Parcel } from "../core/Parcel";
 
@@ -182,7 +182,7 @@ export class AccountRpc {
         parcel: Parcel;
         account: PlatformAddress | string;
         passphrase?: string;
-    }): Promise<{ hash: H256; seq: U256 }> {
+    }): Promise<{ hash: H256; seq: number }> {
         const { parcel, account, passphrase } = params;
         if (!PlatformAddress.check(account)) {
             throw Error(
@@ -207,7 +207,7 @@ export class AccountRpc {
             .then(result => {
                 return {
                     hash: H256.ensure(result.hash),
-                    seq: U256.ensure(result.seq)
+                    seq: result.seq
                 };
             });
     }

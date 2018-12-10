@@ -16,7 +16,7 @@ import {
 import { Asset } from "../Asset";
 import { AssetScheme } from "../AssetScheme";
 import { NetworkId } from "../types";
-import { U256 } from "../U256";
+import { U64 } from "../U64";
 import { AssetMintOutput, AssetMintOutputJSON } from "./AssetMintOutput";
 import {
     AssetTransferInput,
@@ -33,7 +33,8 @@ export interface AssetComposeTransactionJSON {
         metadata: string;
         inputs: AssetTransferInputJSON[];
         output: AssetMintOutputJSON;
-        registrar: string | null;
+        approver: string | null;
+        administrator: string | null;
     };
 }
 
@@ -48,14 +49,26 @@ export class AssetComposeTransaction {
      */
     public static fromJSON(obj: AssetComposeTransactionJSON) {
         const {
-            data: { networkId, shardId, metadata, inputs, output, registrar }
+            data: {
+                networkId,
+                shardId,
+                metadata,
+                inputs,
+                output,
+                approver,
+                administrator
+            }
         } = obj;
         return new this({
             networkId,
             shardId,
             metadata,
-            registrar:
-                registrar === null ? null : PlatformAddress.ensure(registrar),
+            approver:
+                approver === null ? null : PlatformAddress.ensure(approver),
+            administrator:
+                administrator === null
+                    ? null
+                    : PlatformAddress.ensure(administrator),
             inputs: inputs.map(input => AssetTransferInput.fromJSON(input)),
             output: AssetMintOutput.fromJSON(output)
         });
@@ -64,7 +77,8 @@ export class AssetComposeTransaction {
     public readonly networkId: NetworkId;
     public readonly shardId: number;
     public readonly metadata: string;
-    public readonly registrar: PlatformAddress | null;
+    public readonly approver: PlatformAddress | null;
+    public readonly administrator: PlatformAddress | null;
     public readonly inputs: AssetTransferInput[];
     public readonly output: AssetMintOutput;
     public readonly type = "assetCompose";
@@ -73,7 +87,8 @@ export class AssetComposeTransaction {
      * @param params.networkId A network ID of the transaction.
      * @param params.shardId A shard ID of the transaction.
      * @param params.metadata A metadata of the asset.
-     * @param params.registrar A registrar of the asset.
+     * @param params.approver A approver of the asset.
+     * @param params.administrator A administrator of the asset.
      * @param params.inputs A list of inputs of the transaction.
      * @param params.output An output of the transaction.
      */
@@ -81,7 +96,8 @@ export class AssetComposeTransaction {
         networkId: NetworkId;
         shardId: number;
         metadata: string;
-        registrar: PlatformAddress | null;
+        approver: PlatformAddress | null;
+        administrator: PlatformAddress | null;
         inputs: AssetTransferInput[];
         output: AssetMintOutput;
     }) {
@@ -89,15 +105,20 @@ export class AssetComposeTransaction {
             networkId,
             shardId,
             metadata,
-            registrar,
+            approver,
+            administrator,
             inputs,
             output
         } = params;
         this.networkId = networkId;
         this.shardId = shardId;
         this.metadata = metadata;
-        this.registrar =
-            registrar === null ? null : PlatformAddress.ensure(registrar);
+        this.approver =
+            approver === null ? null : PlatformAddress.ensure(approver);
+        this.administrator =
+            administrator === null
+                ? null
+                : PlatformAddress.ensure(administrator);
         this.inputs = inputs;
         this.output = new AssetMintOutput(output);
     }
@@ -113,8 +134,12 @@ export class AssetComposeTransaction {
                 networkId: this.networkId,
                 shardId: this.shardId,
                 metadata: this.metadata,
-                registrar:
-                    this.registrar === null ? null : this.registrar.toString(),
+                approver:
+                    this.approver === null ? null : this.approver.toString(),
+                administrator:
+                    this.administrator === null
+                        ? null
+                        : this.administrator.toString(),
                 output: this.output.toJSON(),
                 inputs: this.inputs.map(input => input.toJSON())
             }
@@ -130,7 +155,8 @@ export class AssetComposeTransaction {
             this.networkId,
             this.shardId,
             this.metadata,
-            this.registrar ? [this.registrar.toString()] : [],
+            this.approver ? [this.approver.toString()] : [],
+            this.administrator ? [this.administrator.toString()] : [],
             this.inputs.map(input => input.toEncodeObject()),
             this.output.lockScriptHash.toEncodeObject(),
             this.output.parameters.map(parameter => Buffer.from(parameter)),
@@ -195,14 +221,15 @@ export class AssetComposeTransaction {
         } else {
             throw Error(`Unexpected value of the tag output: ${tag.output}`);
         }
-        const { networkId, shardId, metadata, registrar } = this;
+        const { networkId, shardId, metadata, approver, administrator } = this;
         return new H256(
             blake256WithKey(
                 new AssetComposeTransaction({
                     networkId,
                     shardId,
                     metadata,
-                    registrar,
+                    approver,
+                    administrator,
                     inputs,
                     output
                 }).rlpBytes(),
@@ -250,7 +277,7 @@ export class AssetComposeTransaction {
             assetType: this.getAssetSchemeAddress(),
             lockScriptHash,
             parameters,
-            amount: amount == null ? U256.ensure(U256.MAX_VALUE) : amount,
+            amount: amount == null ? U64.ensure(U64.MAX_VALUE) : amount,
             transactionHash: this.hash(),
             transactionOutputIndex: 0
         });
@@ -267,9 +294,9 @@ export class AssetComposeTransaction {
             metadata,
             inputs,
             output: { amount },
-            registrar
+            approver,
+            administrator
         } = this;
-        // FIXME: need U64 to be implemented or use U256
         if (amount == null) {
             throw Error("not implemented");
         }
@@ -278,13 +305,14 @@ export class AssetComposeTransaction {
             shardId,
             metadata,
             amount,
-            registrar,
+            approver,
+            administrator,
             pool: _.toPairs(
                 // NOTE: Get the sum of each asset type
-                inputs.reduce((acc: { [assetType: string]: U256 }, input) => {
+                inputs.reduce((acc: { [assetType: string]: U64 }, input) => {
                     const { assetType, amount: assetAmount } = input.prevOut;
                     // FIXME: Check integer overflow
-                    acc[assetType.value] = U256.plus(
+                    acc[assetType.value] = U64.plus(
                         acc[assetType.value],
                         assetAmount
                     );
@@ -292,7 +320,7 @@ export class AssetComposeTransaction {
                 }, {})
             ).map(([assetType, assetAmount]) => ({
                 assetType: H256.ensure(assetType),
-                amount: U256.ensure(assetAmount as number)
+                amount: U64.ensure(assetAmount as number)
             }))
         });
     }

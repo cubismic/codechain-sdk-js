@@ -1,8 +1,9 @@
 import { PlatformAddress } from "codechain-primitives";
 
+import { H160 } from "../H160";
 import { H512 } from "../H512";
 import { getTransactionFromJSON } from "../transaction/Transaction";
-import { U256 } from "../U256";
+import { U64 } from "../U64";
 
 import { AssetTransaction } from "./AssetTransaction";
 import { CreateShard } from "./CreateShard";
@@ -10,6 +11,7 @@ import { Payment } from "./Payment";
 import { SetRegularKey } from "./SetReulgarKey";
 import { SetShardOwners } from "./SetShardOwners";
 import { SetShardUsers } from "./SetShardUsers";
+import { WrapCCC } from "./WrapCCC";
 
 export type Action =
     | AssetTransaction
@@ -17,25 +19,30 @@ export type Action =
     | SetRegularKey
     | CreateShard
     | SetShardOwners
-    | SetShardUsers;
+    | SetShardUsers
+    | WrapCCC;
 
 export function getActionFromJSON(json: any): Action {
     const { action } = json;
     switch (action) {
-        case "assetTransaction":
-            const { transaction } = json;
+        case "assetTransaction": {
+            const { transaction, approvals } = json;
             return new AssetTransaction({
-                transaction: getTransactionFromJSON(transaction)
+                transaction: getTransactionFromJSON(transaction),
+                approvals
             });
-        case "payment":
+        }
+        case "payment": {
             const { receiver, amount } = json;
             return new Payment(
                 PlatformAddress.ensure(receiver),
-                new U256(amount)
+                new U64(amount)
             );
-        case "setRegularKey":
+        }
+        case "setRegularKey": {
             const { key } = json;
             return new SetRegularKey(new H512(key));
+        }
         case "createShard":
             return new CreateShard();
         case "setShardOwners": {
@@ -50,6 +57,17 @@ export function getActionFromJSON(json: any): Action {
             return new SetShardUsers({
                 shardId,
                 users: users.map(PlatformAddress.ensure)
+            });
+        }
+        case "wrapCCC": {
+            const { shardId, lockScriptHash, parameters, amount } = json;
+            return new WrapCCC({
+                shardId,
+                lockScriptHash: H160.ensure(lockScriptHash),
+                parameters: parameters.map((p: number[] | Buffer) =>
+                    Buffer.from(p)
+                ),
+                amount: U64.ensure(amount)
             });
         }
         default:
