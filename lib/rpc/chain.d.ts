@@ -8,6 +8,7 @@ import { H512 } from "../core/H512";
 import { Invoice } from "../core/Invoice";
 import { Parcel } from "../core/Parcel";
 import { SignedParcel } from "../core/SignedParcel";
+import { Text } from "../core/Text";
 import { Transaction } from "../core/transaction/Transaction";
 import { NetworkId } from "../core/types";
 import { U64 } from "../core/U64";
@@ -146,6 +147,13 @@ export declare class ChainRpc {
      * @returns Asset, if asset exists, Else, returns null.
      */
     getAsset(txhash: H256 | string, index: number, blockNumber?: number): Promise<Asset | null>;
+    /**
+     * Gets the text of the given hash of parcel with Store action.
+     * @param parcelHash The parcel hash of the Store parcel.
+     * @param blockNumber The specific block number to get the text from
+     * @returns Text, if text exists. Else, returns null.
+     */
+    getText(parcelHash: H256 | string, blockNumber?: number | null): Promise<Text | null>;
     /**
      * Checks whether an asset is spent or not.
      * @param txhash The tx hash of AssetMintTransaction or AssetTransferTransaction.

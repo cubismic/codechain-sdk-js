@@ -31,7 +31,7 @@ export declare class AssetUnwrapCCCTransaction {
      * @param obj An AssetUnwrapCCCTransactionJSON object.
      * @returns An AssetUnwrapCCCTransaction.
      */
-    static fromJSON(obj: any): AssetUnwrapCCCTransaction;
+    static fromJSON(obj: AssetUnwrapCCCTransactionJSON): AssetUnwrapCCCTransaction;
     readonly burn: AssetTransferInput;
     readonly networkId: NetworkId;
     readonly type = "assetUnwrapCCC";

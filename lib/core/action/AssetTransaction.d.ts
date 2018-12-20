@@ -9,7 +9,7 @@ export declare class AssetTransaction {
     toEncodeObject(): any[];
     toJSON(): {
         action: string;
-        transaction: import("../transaction/AssetTransferTransaction").AssetTransferTransactionJSON | import("../transaction/AssetMintTransaction").AssetMintTransactionJSON | import("../transaction/AssetComposeTransaction").AssetComposeTransactionJSON | import("../transaction/AssetDecomposeTransaction").AssetDecomposeTransactionJSON | {
+        transaction: import("../transaction/AssetTransferTransaction").AssetTransferTransactionJSON | import("../transaction/AssetMintTransaction").AssetMintTransactionJSON | import("../transaction/AssetComposeTransaction").AssetComposeTransactionJSON | import("../transaction/AssetDecomposeTransaction").AssetDecomposeTransactionJSON | import("../transaction/AssetSchemeChangeTransaction").AssetSchemeChangeTransactionJSON | {
             type: string;
             data: {
                 networkId: string;

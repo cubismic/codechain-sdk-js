@@ -36,6 +36,6 @@ export declare class WrapCCC {
         shardId: number;
         lockScriptHash: string;
         parameters: number[][];
-        amount: string | number;
+        amount: string;
     };
 }

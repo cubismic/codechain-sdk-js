@@ -1,5 +1,5 @@
 import { AssetTransferAddress, PlatformAddress } from "codechain-primitives";
-import { AssetComposeTransaction, AssetDecomposeTransaction, AssetTransferTransaction, AssetUnwrapCCCTransaction, Order, Parcel, SignedParcel, Transaction, U64 } from "../core/classes";
+import { AssetComposeTransaction, AssetDecomposeTransaction, AssetTransferInput, AssetTransferTransaction, AssetUnwrapCCCTransaction, Order, Parcel, SignedParcel, Transaction, U64 } from "../core/classes";
 import { NetworkId } from "../core/types";
 import { SignatureTag } from "../utils";
 import { KeyStore } from "./KeyStore";
@@ -119,13 +119,12 @@ export declare class Key {
     }): Promise<void>;
     /**
      * Signs a transaction's input with an order.
-     * @param tx An AssetTransferTransaction.
-     * @param index The index of an input to sign.
+     * @param input An AssetTransferInput.
      * @param order An order to be used as a signature message.
      * @param params.keyStore A key store.
      * @param params.passphrase The passphrase for the given input.
      */
-    signTransactionInputWithOrder(tx: AssetTransferTransaction, index: number, order: Order, params?: {
+    signTransactionInputWithOrder(input: AssetTransferInput, order: Order, params?: {
         keyStore?: KeyStore;
         passphrase?: string;
     }): Promise<void>;

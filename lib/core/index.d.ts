@@ -3,9 +3,11 @@ import { AssetTransferAddress, PlatformAddress } from "codechain-primitives";
 import { AssetTransaction } from "./action/AssetTransaction";
 import { CreateShard } from "./action/CreateShard";
 import { Payment } from "./action/Payment";
-import { SetRegularKey } from "./action/SetReulgarKey";
+import { Remove } from "./action/Remove";
+import { SetRegularKey } from "./action/SetRegularKey";
 import { SetShardOwners } from "./action/SetShardOwners";
 import { SetShardUsers } from "./action/SetShardUsers";
+import { Store } from "./action/Store";
 import { WrapCCC } from "./action/WrapCCC";
 import { Asset } from "./Asset";
 import { AssetScheme } from "./AssetScheme";
@@ -22,6 +24,7 @@ import { AssetComposeTransaction } from "./transaction/AssetComposeTransaction";
 import { AssetDecomposeTransaction } from "./transaction/AssetDecomposeTransaction";
 import { AssetMintTransaction } from "./transaction/AssetMintTransaction";
 import { AssetOutPoint } from "./transaction/AssetOutPoint";
+import { AssetSchemeChangeTransaction } from "./transaction/AssetSchemeChangeTransaction";
 import { AssetTransferInput, Timelock } from "./transaction/AssetTransferInput";
 import { AssetTransferOutput } from "./transaction/AssetTransferOutput";
 import { AssetTransferTransaction } from "./transaction/AssetTransferTransaction";
@@ -51,7 +54,10 @@ export declare class Core {
         SetShardOwners: typeof SetShardOwners;
         SetShardUsers: typeof SetShardUsers;
         WrapCCC: typeof WrapCCC;
+        Store: typeof Store;
+        Remove: typeof Remove;
         AssetMintTransaction: typeof AssetMintTransaction;
+        AssetSchemeChangeTransaction: typeof AssetSchemeChangeTransaction;
         AssetTransferTransaction: typeof AssetTransferTransaction;
         AssetComposeTransaction: typeof AssetComposeTransaction;
         AssetDecomposeTransaction: typeof AssetDecomposeTransaction;
@@ -83,7 +89,10 @@ export declare class Core {
         SetShardOwners: typeof SetShardOwners;
         SetShardUsers: typeof SetShardUsers;
         WrapCCC: typeof WrapCCC;
+        Store: typeof Store;
+        Remove: typeof Remove;
         AssetMintTransaction: typeof AssetMintTransaction;
+        AssetSchemeChangeTransaction: typeof AssetSchemeChangeTransaction;
         AssetTransferTransaction: typeof AssetTransferTransaction;
         AssetComposeTransaction: typeof AssetComposeTransaction;
         AssetDecomposeTransaction: typeof AssetDecomposeTransaction;
@@ -171,6 +180,36 @@ export declare class Core {
         amount: U64 | number | string;
     }): Parcel;
     /**
+     * Creates Store action which store content with certifier on chain.
+     * @param params.content Content to store
+     * @param params.secret Secret key to sign
+     * @param params.certifier Certifier of the text, which is PlatformAddress
+     * @param params.signature Signature on the content by the certifier
+     * @throws Given string for secret is invalid for converting it to H256
+     */
+    createStoreParcel(params: {
+        content: string;
+        certifier: PlatformAddress | string;
+        signature: string;
+    } | {
+        content: string;
+        secret: H256 | string;
+    }): Parcel;
+    /**
+     * Creates Remove action which remove the text from the chain.
+     * @param params.hash Parcel hash which stored the text
+     * @param params.secret Secret key to sign
+     * @param params.signature Signature on parcel hash by the certifier of the text
+     * @throws Given string for hash or secret is invalid for converting it to H256
+     */
+    createRemoveParcel(params: {
+        hash: H256 | string;
+        secret: H256 | string;
+    } | {
+        hash: H256 | string;
+        signature: string;
+    }): Parcel;
+    /**
      * Creates asset's scheme.
      * @param params.metadata Any string that describing the asset. For example,
      * stringified JSON containing properties.
@@ -233,6 +272,15 @@ export declare class Core {
         };
         recipient: AssetTransferAddress | string;
     }): AssetMintTransaction;
+    createAssetSchemeChangeTransaction(params: {
+        assetType: H256 | string;
+        scheme: AssetScheme | {
+            networkId?: NetworkId;
+            metadata: string;
+            approver?: PlatformAddress | string;
+            administrator?: PlatformAddress | string;
+        };
+    }): AssetSchemeChangeTransaction;
     createAssetTransferTransaction(params?: {
         burns?: AssetTransferInput[];
         inputs?: AssetTransferInput[];
