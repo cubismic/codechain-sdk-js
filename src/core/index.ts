@@ -3,10 +3,13 @@ import { AssetTransferAddress, PlatformAddress } from "codechain-primitives";
 import { AssetTransaction } from "./action/AssetTransaction";
 import { CreateShard } from "./action/CreateShard";
 import { Payment } from "./action/Payment";
-import { SetRegularKey } from "./action/SetReulgarKey";
+import { Remove } from "./action/Remove";
+import { SetRegularKey } from "./action/SetRegularKey";
 import { SetShardOwners } from "./action/SetShardOwners";
 import { SetShardUsers } from "./action/SetShardUsers";
+import { Store } from "./action/Store";
 import { WrapCCC } from "./action/WrapCCC";
+
 import { Asset } from "./Asset";
 import { AssetScheme } from "./AssetScheme";
 import { Block } from "./Block";
@@ -23,6 +26,7 @@ import { AssetDecomposeTransaction } from "./transaction/AssetDecomposeTransacti
 import { AssetMintOutput } from "./transaction/AssetMintOutput";
 import { AssetMintTransaction } from "./transaction/AssetMintTransaction";
 import { AssetOutPoint } from "./transaction/AssetOutPoint";
+import { AssetSchemeChangeTransaction } from "./transaction/AssetSchemeChangeTransaction";
 import { AssetTransferInput, Timelock } from "./transaction/AssetTransferInput";
 import { AssetTransferOutput } from "./transaction/AssetTransferOutput";
 import { AssetTransferTransaction } from "./transaction/AssetTransferTransaction";
@@ -57,8 +61,11 @@ export class Core {
         SetShardOwners,
         SetShardUsers,
         WrapCCC,
+        Store,
+        Remove,
         // Transaction
         AssetMintTransaction,
+        AssetSchemeChangeTransaction,
         AssetTransferTransaction,
         AssetComposeTransaction,
         AssetDecomposeTransaction,
@@ -228,6 +235,95 @@ export class Core {
                     lockScriptHash: H160.ensure(lockScriptHash),
                     parameters,
                     amount: U64.ensure(amount)
+                })
+            );
+        }
+    }
+
+    /**
+     * Creates Store action which store content with certifier on chain.
+     * @param params.content Content to store
+     * @param params.secret Secret key to sign
+     * @param params.certifier Certifier of the text, which is PlatformAddress
+     * @param params.signature Signature on the content by the certifier
+     * @throws Given string for secret is invalid for converting it to H256
+     */
+    public createStoreParcel(
+        params:
+            | {
+                  content: string;
+                  certifier: PlatformAddress | string;
+                  signature: string;
+              }
+            | {
+                  content: string;
+                  secret: H256 | string;
+              }
+    ): Parcel {
+        if ("secret" in params) {
+            const { content, secret } = params;
+            checkSecret(secret);
+            return new Parcel(
+                this.networkId,
+                new Store({
+                    content,
+                    secret: H256.ensure(secret),
+                    networkId: this.networkId
+                })
+            );
+        } else {
+            const { content, certifier, signature } = params;
+            checkCertifier(certifier);
+            checkSignature(signature);
+            return new Parcel(
+                this.networkId,
+                new Store({
+                    content,
+                    certifier: PlatformAddress.ensure(certifier),
+                    signature
+                })
+            );
+        }
+    }
+
+    /**
+     * Creates Remove action which remove the text from the chain.
+     * @param params.hash Parcel hash which stored the text
+     * @param params.secret Secret key to sign
+     * @param params.signature Signature on parcel hash by the certifier of the text
+     * @throws Given string for hash or secret is invalid for converting it to H256
+     */
+    public createRemoveParcel(
+        params:
+            | {
+                  hash: H256 | string;
+                  secret: H256 | string;
+              }
+            | {
+                  hash: H256 | string;
+                  signature: string;
+              }
+    ): Parcel {
+        if ("secret" in params) {
+            const { hash, secret } = params;
+            checkParcelHash(hash);
+            checkSecret(secret);
+            return new Parcel(
+                this.networkId,
+                new Remove({
+                    hash: H256.ensure(hash),
+                    secret: H256.ensure(secret)
+                })
+            );
+        } else {
+            const { hash, signature } = params;
+            checkParcelHash(hash);
+            checkSignature(signature);
+            return new Parcel(
+                this.networkId,
+                new Remove({
+                    hash: H256.ensure(hash),
+                    signature
                 })
             );
         }
@@ -461,6 +557,47 @@ export class Core {
                 amount: amount == null ? null : U64.ensure(amount),
                 recipient: AssetTransferAddress.ensure(recipient)
             })
+        });
+    }
+
+    public createAssetSchemeChangeTransaction(params: {
+        assetType: H256 | string;
+        scheme:
+            | AssetScheme
+            | {
+                  networkId?: NetworkId;
+                  metadata: string;
+                  approver?: PlatformAddress | string;
+                  administrator?: PlatformAddress | string;
+              };
+    }): AssetSchemeChangeTransaction {
+        const { assetType, scheme } = params;
+        if (scheme !== null && typeof scheme !== "object") {
+            throw Error(
+                `Expected scheme param to be either an AssetScheme or an object but found ${scheme}`
+            );
+        }
+        const {
+            networkId = this.networkId,
+            metadata,
+            approver: approver = null,
+            administrator: administrator = null
+        } = scheme;
+        checkNetworkId(networkId);
+        checkAssetType(assetType);
+        checkMetadata(metadata);
+        checkApprover(approver);
+        checkAdministrator(administrator);
+        return new AssetSchemeChangeTransaction({
+            networkId,
+            assetType: H256.ensure(assetType),
+            metadata,
+            approver:
+                approver == null ? null : PlatformAddress.ensure(approver),
+            administrator:
+                administrator == null
+                    ? null
+                    : PlatformAddress.ensure(administrator)
         });
     }
 
@@ -798,6 +935,14 @@ function checkAdministrator(administrator: PlatformAddress | string | null) {
     }
 }
 
+function checkCertifier(certifier: PlatformAddress | string) {
+    if (!PlatformAddress.check(certifier)) {
+        throw Error(
+            `Expected certifier param to be a PlatformAddress but found ${certifier}`
+        );
+    }
+}
+
 function checkTransaction(_transaction: Transaction) {
     // FIXME: check whether the transaction is valid
 }
@@ -967,6 +1112,22 @@ function checkLockScriptHash(value: H160 | string) {
     }
 }
 
+function checkParcelHash(value: H256 | string) {
+    if (!H256.check(value)) {
+        throw Error(
+            `Expected hash param to be an H256 value but found ${value}`
+        );
+    }
+}
+
+function checkSecret(value: H256 | string) {
+    if (!H256.check(value)) {
+        throw Error(
+            `Expected secret param to be an H256 value but found ${value}`
+        );
+    }
+}
+
 function checkParameters(parameters: Buffer[]) {
     if (!Array.isArray(parameters)) {
         throw Error(
@@ -1015,6 +1176,18 @@ function checkUnlockScript(unlockScript: Buffer) {
     if (!(unlockScript instanceof Buffer)) {
         throw Error(
             `Expected unlockScript param to be an instance of Buffer but found ${unlockScript}`
+        );
+    }
+}
+
+function checkSignature(signature: string) {
+    // ECDSA Signature
+    if (
+        typeof signature !== "string" ||
+        !/^(0x)?[0-9a-fA-F]{130}$/.test(signature)
+    ) {
+        throw Error(
+            `Expected signature param to be a 65 byte hexstring but found ${signature}`
         );
     }
 }
