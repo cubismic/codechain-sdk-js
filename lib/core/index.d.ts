@@ -250,11 +250,16 @@ export declare class Core {
         }[];
         expiration: U64 | number | string;
     } & ({
-        lockScriptHash: H160 | string;
-        parameters: Buffer[];
+        lockScriptHashFrom: H160 | string;
+        parametersFrom: Buffer[];
     } | {
-        recipient: AssetTransferAddress | string;
-    })): Order;
+        recipientFrom: AssetTransferAddress | string;
+    }) & ({
+        lockScriptHashFee: H160 | string;
+        parametersFee: Buffer[];
+    } | {
+        recipientFee: AssetTransferAddress | string;
+    } | {})): Order;
     createOrderOnTransfer(params: {
         order: Order;
         spentAmount: U64 | string | number;

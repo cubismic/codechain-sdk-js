@@ -13,10 +13,12 @@ export interface OrderJSON {
     assetAmountFee: string;
     originOutputs: AssetOutPointJSON[];
     expiration: string;
-    lockScriptHash: string;
-    parameters: number[][];
+    lockScriptHashFrom: string;
+    parametersFrom: number[][];
+    lockScriptHashFee: string;
+    parametersFee: number[][];
 }
-export interface OrderData {
+export interface OrderDataBasic {
     assetTypeFrom: H256;
     assetTypeTo: H256;
     assetTypeFee?: H256;
@@ -25,8 +27,6 @@ export interface OrderData {
     assetAmountFee?: U64;
     originOutputs: AssetOutPoint[];
     expiration: U64;
-    lockScriptHash: H160;
-    parameters: Buffer[];
 }
 export interface OrderAddressData {
     assetTypeFrom: H256;
@@ -37,7 +37,8 @@ export interface OrderAddressData {
     assetAmountFee?: U64;
     originOutputs: AssetOutPoint[];
     expiration: U64;
-    recipient: AssetTransferAddress;
+    recipientFrom: AssetTransferAddress;
+    recipientFee: AssetTransferAddress;
 }
 export declare class Order {
     /**
@@ -54,8 +55,10 @@ export declare class Order {
     readonly assetAmountFee: U64;
     readonly originOutputs: AssetOutPoint[];
     readonly expiration: U64;
-    readonly lockScriptHash: H160;
-    readonly parameters: Buffer[];
+    readonly lockScriptHashFrom: H160;
+    readonly parametersFrom: Buffer[];
+    readonly lockScriptHashFee: H160;
+    readonly parametersFee: Buffer[];
     /**
      * @param data.assetTypeFrom The asset type of the asset to give.
      * @param data.assetTypeTo The asset type of the asset to get.
@@ -68,7 +71,17 @@ export declare class Order {
      * @param data.lockScriptHash The lock script hash of the asset.
      * @param data.parameters The parameters of the asset.
      */
-    constructor(data: OrderData | OrderAddressData);
+    constructor(data: OrderDataBasic & ({
+        lockScriptHashFrom: H160;
+        parametersFrom: Buffer[];
+    } | {
+        recipientFrom: AssetTransferAddress;
+    }) & ({
+        lockScriptHashFee: H160;
+        parametersFee: Buffer[];
+    } | {
+        recipientFee: AssetTransferAddress;
+    }));
     /**
      * Convert to an object for RLP encoding.
      */
