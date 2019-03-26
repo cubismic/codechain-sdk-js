@@ -46,30 +46,55 @@ export class Rpc {
      * @param params.options.transactionFee The default quantity for the tx fee
      */
     constructor(params: {
-        server: string;
+        server: string | string[]; //
         options?: {
             transactionSigner?: string;
             transactionFee?: number;
+            fallBackServer?: string[];
         };
     }) {
-        const { server, options = {} } = params;
+        const { server, options = {} } = params; //
         this.client = jaysonBrowserClient((request: any, callback: any) => {
-            fetch(server, {
-                method: "POST",
-                body: request,
-                headers: {
-                    "Content-Type": "application/json"
+            if (typeof server === "string") {
+                console.error(request)
+                fetch(server, {
+                    //
+                    method: "POST",
+                    body: request,
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+                    .then(res => {
+                        return res.text();
+                    })
+                    .then(text => {
+                        return callback(null, text);
+                    })
+                    .catch(err => {
+                        return callback(err);
+                    });
+            } else {
+                for (const serverURL of server) {
+                    fetch(serverURL, {
+                        method: "POST",
+                        body: request,
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    })
+                        .then(res => {
+                            return res.text();
+                        })
+                        .then(text => {
+                            return callback(null, text);
+                        })
+                        .catch(err => {
+                            console.error("hehe");
+                            return callback(err);
+                        });
                 }
-            })
-                .then(res => {
-                    return res.text();
-                })
-                .then(text => {
-                    return callback(null, text);
-                })
-                .catch(err => {
-                    return callback(err);
-                });
+            }
         });
 
         this.node = new NodeRpc(this);

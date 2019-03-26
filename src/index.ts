@@ -51,7 +51,7 @@ class SDK {
      * @param params.networkId The network id of CodeChain. The default value is "tc" (testnet)
      */
     constructor(params: {
-        server: string;
+        server: string | string[];
         keyStoreType?: KeyStoreType;
         networkId?: NetworkId;
         // Deprecated. It will be removed at 0.2.0
@@ -59,10 +59,11 @@ class SDK {
             networkId?: NetworkId;
             transactionSigner?: string;
             transactionFee?: number;
+            fallBackServer?: string[];
         };
     }) {
         const {
-            server,
+            server, //
             keyStoreType = "local",
             networkId = "tc",
             options
@@ -70,12 +71,13 @@ class SDK {
         const {
             networkId: networkIdOpt,
             transactionSigner,
-            transactionFee = 10
-        } = options || { networkId: undefined, transactionSigner: undefined };
+            transactionFee = 10,
+            fallBackServer
+        } = options || { networkId: undefined, transactionSigner: undefined, fallBackServer: undefined };
 
         this.rpc = new Rpc({
-            server,
-            options: { transactionSigner, transactionFee }
+            server, //
+            options: { transactionSigner, transactionFee, fallBackServer }
         });
         this.core = new Core({ networkId: networkIdOpt || networkId });
         this.key = new Key({

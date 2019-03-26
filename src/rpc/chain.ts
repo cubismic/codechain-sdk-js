@@ -20,23 +20,26 @@ import { Text } from "../core/Text";
 import { Transaction } from "../core/Transaction";
 import { fromJSONToSignedTransaction } from "../core/transaction/json";
 import { NetworkId } from "../core/types";
+import { resolve } from "bluebird";
 
 export class ChainRpc {
     private rpc: Rpc;
     private transactionSigner?: string;
     private transactionFee?: number;
+    private fallBackServer?: string[];
 
     /**
      * @hidden
      */
     constructor(
         rpc: Rpc,
-        options: { transactionSigner?: string; transactionFee?: number }
+        options: { transactionSigner?: string; transactionFee?: number; fallBackServer?: string[] }
     ) {
-        const { transactionSigner, transactionFee } = options;
+        const { transactionSigner, transactionFee, fallBackServer } = options;
         this.rpc = rpc;
         this.transactionSigner = transactionSigner;
         this.transactionFee = transactionFee;
+        this.fallBackServer = fallBackServer;
     }
 
     /**
@@ -1354,6 +1357,12 @@ export class ChainRpc {
                 })
                 .catch(reject);
         });
+    }
+
+    private sendChainRpcRequest (name: string, params: any[], id?: string) {
+
+        this.rpc.sendRpcRequest(name, params).then(result => resolve(result));
+
     }
 }
 
